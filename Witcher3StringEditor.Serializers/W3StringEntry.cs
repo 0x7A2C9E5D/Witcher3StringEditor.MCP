@@ -1,4 +1,4 @@
-namespace Witcher3StringEditor.Serializers.W3Strings;
+namespace Witcher3StringEditor.Serializers;
 
 /// <summary>
 ///     One string of a container: the id it is stored under, its text, and its slot in the string buffer.

@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Witcher3StringEditor.Serializers.W3Strings;
+namespace Witcher3StringEditor.Serializers;
 
 /// <summary>
 ///     The stored form of one text: the bytes a container holds for it, and the number of characters

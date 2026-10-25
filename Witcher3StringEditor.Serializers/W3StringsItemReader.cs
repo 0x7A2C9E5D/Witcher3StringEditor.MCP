@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace Witcher3StringEditor.Serializers.W3Strings;
+namespace Witcher3StringEditor.Serializers;
 
 /// <summary>
 ///     Reads the items a container is shown as out of it, the reverse of <see cref="W3StringsBuilder" />.

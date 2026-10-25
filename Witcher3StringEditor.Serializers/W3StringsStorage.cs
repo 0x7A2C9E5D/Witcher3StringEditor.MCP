@@ -1,8 +1,7 @@
 using System.Text;
 using Serilog;
-using Witcher3StringEditor.Contracts;
 
-namespace Witcher3StringEditor.Serializers.W3Strings;
+namespace Witcher3StringEditor.Serializers;
 
 /// <summary>
 ///     The storage model of the w3strings format: the fixed facts of the format, and the stored form of one
@@ -29,13 +28,13 @@ internal sealed class W3StringsStorage
     /// <summary>
     ///     The version of the UTF-8 generation: one byte per character, so offsets and lengths count bytes.
     /// </summary>
-    public const uint FirstUtf8Version = 164;
+    internal const uint FirstUtf8Version = 164;
 
     /// <summary>
     ///     The version the classic UTF-16LE generation is written with: two bytes per character, so offsets
     ///     and lengths count characters.
     /// </summary>
-    public const uint Utf16LeVersion = 162;
+    internal const uint Utf16LeVersion = 162;
 
     /// <summary>
     ///     The size of the first block of entries: 12 bytes.
@@ -56,7 +55,7 @@ internal sealed class W3StringsStorage
     /// <summary>
     ///     The offset the string buffer was found at, which a container laid out for writing does not record.
     /// </summary>
-    private long? bufferStart;
+    private long? _bufferStart;
 
     /// <summary>
     ///     A storage model is built either by reading a container or by laying one out, the two places the
@@ -91,7 +90,7 @@ internal sealed class W3StringsStorage
     ///     A read container holds the version measured against the file rather than the one it declares;
     ///     one laid out for writing holds the version it was asked for.
     /// </remarks>
-    public uint Version { get; private init; }
+    internal uint Version { get; private init; }
 
     /// <summary>
     ///     The full 32-bit language key of the container.
@@ -125,7 +124,7 @@ internal sealed class W3StringsStorage
     /// <summary>
     ///     The offset the string buffer starts at, in bytes.
     /// </summary>
-    public long BufferOffset => bufferStart ?? Preamble.Length;
+    public long BufferOffset => _bufferStart ?? Preamble.Length;
 
     /// <summary>
     ///     The bytes a container holds before its string buffer: the head, the two blocks of entries and the
@@ -154,7 +153,7 @@ internal sealed class W3StringsStorage
     /// </remarks>
     public static uint MagicOf(uint key)
     {
-        var language = Language.FromKey(key);
+        var language = W3Language.FromKey(key);
         if (language is not null) return language.Magic;
         if (key == 0) return 0;
         throw new W3StringsException(
@@ -245,7 +244,7 @@ internal sealed class W3StringsStorage
                 Key = key,
                 Magic = MagicOf(key),
                 BufferUnits = held,
-                bufferStart = start,
+                _bufferStart = start,
                 Strings = entries,
                 Keys = keys
             };

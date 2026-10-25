@@ -1,8 +1,7 @@
 using System.Globalization;
 using Serilog;
-using Witcher3StringEditor.Contracts.Abstractions;
 
-namespace Witcher3StringEditor.Serializers.W3Strings;
+namespace Witcher3StringEditor.Serializers;
 
 /// <summary>
 ///     Builds a <see cref="W3StringsFile" /> from a list of string items.
@@ -18,7 +17,7 @@ internal static class W3StringsBuilder
     /// <remarks>
     ///     The version is not asked for here: it is chosen when the container is written.
     /// </remarks>
-    public static W3StringsFile? Build(IReadOnlyList<IStringItem> items, uint key)
+    public static W3StringsFile? Build(IReadOnlyList<StringItem> items, uint key)
     {
         if (HasDuplicateStrIds(items)) return null;
         var file = new W3StringsFile { Key = key };
@@ -31,7 +30,7 @@ internal static class W3StringsBuilder
     /// <param name="item">The item to process.</param>
     /// <param name="file">The container to add the item to.</param>
     /// <returns>True if the item is valid.</returns>
-    private static bool ProcessItem(IStringItem item, W3StringsFile file)
+    private static bool ProcessItem(StringItem item, W3StringsFile file)
     {
         if (uint.TryParse(item.StrId, out var id))
         {
@@ -49,7 +48,7 @@ internal static class W3StringsBuilder
     /// <param name="file">The container to add the entries to.</param>
     /// <param name="id">The id of the entries.</param>
     /// <param name="item">The item to add the entries for.</param>
-    private static void ResolveKeyAndAddEntry(W3StringsFile file, uint id, IStringItem item)
+    private static void ResolveKeyAndAddEntry(W3StringsFile file, uint id, StringItem item)
     {
         ResolveKey(item);
         AddEntry(file, id, item);
@@ -61,7 +60,7 @@ internal static class W3StringsBuilder
     /// <param name="file">The container to add the entries to.</param>
     /// <param name="id">The id of the entries.</param>
     /// <param name="item">The item to add the entries for.</param>
-    private static void AddEntry(W3StringsFile file, uint id, IStringItem item)
+    private static void AddEntry(W3StringsFile file, uint id, StringItem item)
     {
         // An item with no key gets no key entry: writing one with a hash of zero would leave an entry no
         // key can resolve to.
@@ -75,7 +74,7 @@ internal static class W3StringsBuilder
     /// <param name="file">The container to add the entry to.</param>
     /// <param name="id">The id of the entry.</param>
     /// <param name="item">The item to add the entry for.</param>
-    private static void AddStringEntry(W3StringsFile file, uint id, IStringItem item)
+    private static void AddStringEntry(W3StringsFile file, uint id, StringItem item)
     {
         file.Strings.Add(CreateStringEntry(id, item));
     }
@@ -86,7 +85,7 @@ internal static class W3StringsBuilder
     /// <param name="file">The container to add the entry to.</param>
     /// <param name="id">The id of the entry.</param>
     /// <param name="item">The item to add the entry for.</param>
-    private static void AddKeyEntry(W3StringsFile file, uint id, IStringItem item)
+    private static void AddKeyEntry(W3StringsFile file, uint id, StringItem item)
     {
         file.Keys.Add(CreateKeyEntry(id, item));
     }
@@ -97,7 +96,7 @@ internal static class W3StringsBuilder
     /// <param name="id">The id of the entry.</param>
     /// <param name="item">The item to create the entry from.</param>
     /// <returns>The created entry.</returns>
-    private static W3StringEntry CreateStringEntry(uint id, IStringItem item)
+    private static W3StringEntry CreateStringEntry(uint id, StringItem item)
     {
         return new W3StringEntry
         {
@@ -112,7 +111,7 @@ internal static class W3StringsBuilder
     /// <param name="id">The id of the entry.</param>
     /// <param name="item">The item to create the entry from.</param>
     /// <returns>The created entry.</returns>
-    private static W3KeyEntry CreateKeyEntry(uint id, IStringItem item)
+    private static W3KeyEntry CreateKeyEntry(uint id, StringItem item)
     {
         return new W3KeyEntry
         {
@@ -129,7 +128,7 @@ internal static class W3StringsBuilder
     /// </summary>
     /// <param name="items">The items to check.</param>
     /// <returns>True when two items share a string id.</returns>
-    private static bool HasDuplicateStrIds(IReadOnlyList<IStringItem> items)
+    private static bool HasDuplicateStrIds(IReadOnlyList<StringItem> items)
     {
         if (items.DistinctBy(x => x.StrId).Count() >= items.Count) return false;
         Log.Error("The container has multiple items with the same string id");
@@ -140,7 +139,7 @@ internal static class W3StringsBuilder
     ///     Resolves the key of an item, from its name when it has one and otherwise from its hash.
     /// </summary>
     /// <param name="item">The item to resolve the key for.</param>
-    private static void ResolveKey(IStringItem item)
+    private static void ResolveKey(StringItem item)
     {
         if (!string.IsNullOrWhiteSpace(item.KeyName))
             ResolveKeyFromName(item);
@@ -152,7 +151,7 @@ internal static class W3StringsBuilder
     ///     Resolves the key of an item from its key name.
     /// </summary>
     /// <param name="item">The item to resolve the key for.</param>
-    private static void ResolveKeyFromName(IStringItem item)
+    private static void ResolveKeyFromName(StringItem item)
     {
         var named = LocalizationKeyHash.Of(item.KeyName);
         WarnIfPreExistingKeyHashInconsistent(item, named.Hash);
@@ -164,7 +163,7 @@ internal static class W3StringsBuilder
     /// </summary>
     /// <param name="item">The item to check.</param>
     /// <param name="named">The hash of the key name.</param>
-    private static void WarnIfPreExistingKeyHashInconsistent(IStringItem item, uint named)
+    private static void WarnIfPreExistingKeyHashInconsistent(StringItem item, uint named)
     {
         if (!string.IsNullOrWhiteSpace(item.KeyHex)) WarnIfKeyHashInconsistent(item, named);
     }
@@ -174,7 +173,7 @@ internal static class W3StringsBuilder
     /// </summary>
     /// <param name="item">The item to check.</param>
     /// <param name="named">The hash of the key name.</param>
-    private static void WarnIfKeyHashInconsistent(IStringItem item, uint named)
+    private static void WarnIfKeyHashInconsistent(StringItem item, uint named)
     {
         LogInconsistentKeyHash(item, named, GetCarriedKeyHash(item));
     }
@@ -184,7 +183,7 @@ internal static class W3StringsBuilder
     /// </summary>
     /// <param name="item">The item to read the key hash from.</param>
     /// <returns>The key hash, or null when none is carried.</returns>
-    private static uint? GetCarriedKeyHash(IStringItem item)
+    private static uint? GetCarriedKeyHash(StringItem item)
     {
         return TryParseKeyHash(item.KeyHex, out var hash) ? hash : null;
     }
@@ -206,7 +205,7 @@ internal static class W3StringsBuilder
     /// <param name="item">The item to check.</param>
     /// <param name="named">The hash of the key name.</param>
     /// <param name="carried">The key hash the item carries, or null when none is carried.</param>
-    private static void LogInconsistentKeyHash(IStringItem item, uint named, uint? carried)
+    private static void LogInconsistentKeyHash(StringItem item, uint named, uint? carried)
     {
         if (carried != 0 && carried != named)
             Log.Warning(
@@ -218,7 +217,7 @@ internal static class W3StringsBuilder
     ///     Resolves the key of an item from the hash it carries.
     /// </summary>
     /// <param name="item">The item to resolve the key for.</param>
-    private static void ResolveKeyFromHash(IStringItem item)
+    private static void ResolveKeyFromHash(StringItem item)
     {
         if (string.IsNullOrWhiteSpace(item.KeyHex))
         {
@@ -243,7 +242,7 @@ internal static class W3StringsBuilder
     /// </summary>
     /// <param name="item">The item to set the key hash for.</param>
     /// <param name="hash">The hash to set the key hash to.</param>
-    private static void SetKeyHexFromHash(IStringItem item, uint hash)
+    private static void SetKeyHexFromHash(StringItem item, uint hash)
     {
         item.KeyHex = hash != 0
             ? hash.ToString("X8", CultureInfo.InvariantCulture)

@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Witcher3StringEditor.MCP/Witcher3StringEditor.MCP.csproj" />
+  <Project Path="Witcher3StringEditor.Serializers/Witcher3StringEditor.Serializers.csproj" />
+</Solution>

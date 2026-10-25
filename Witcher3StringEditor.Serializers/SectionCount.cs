@@ -1,4 +1,4 @@
-namespace Witcher3StringEditor.Serializers.W3Strings;
+namespace Witcher3StringEditor.Serializers;
 
 /// <summary>
 ///     The size that introduces one section of a container, in the bit6 framing the format uses for small

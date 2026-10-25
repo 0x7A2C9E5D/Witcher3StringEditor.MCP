@@ -1,4 +1,4 @@
-namespace Witcher3StringEditor.Serializers.W3Strings;
+namespace Witcher3StringEditor.Serializers;
 
 /// <summary>
 ///     The container of strings: the texts and the keys that resolve them.
