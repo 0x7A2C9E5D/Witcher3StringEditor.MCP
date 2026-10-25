@@ -6,14 +6,14 @@ namespace Witcher3StringEditor.Serializers;
 /// <summary>
 ///     W3Strings serializer.
 /// </summary>
-public class W3StringsSerializer
+public static class W3StringsSerializer
 {
     /// <summary>
     ///     Deserialize W3Strings from file.
     /// </summary>
     /// <param name="filePath">Path to file.</param>
     /// <returns>W3Strings items.</returns>
-    public async Task<IReadOnlyList<StringItem>> Deserialize(string filePath)
+    public static async Task<IReadOnlyList<StringItem>> Deserialize(string filePath)
     {
         return await Task.Run(() => ReadItems(filePath)); // Decode the container off the calling thread
     }
@@ -25,7 +25,7 @@ public class W3StringsSerializer
     /// <param name="language">Language to use.</param>
     /// <param name="encoding">Encoding to use.</param>
     /// <returns>Result of serialization.</returns>
-    public async Task<(bool, Stream?)> Serialize(IReadOnlyList<StringItem> w3StringItems, W3Language language,
+    public static async Task<(bool, Stream?)> Serialize(IReadOnlyList<StringItem> w3StringItems, W3Language language,
         Encoding encoding)
     {
         try

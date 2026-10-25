@@ -34,12 +34,6 @@ public record StringItem
     public string KeyName { get; set; } = string.Empty;
 
     /// <summary>
-    ///     Gets or sets the old text of The Witcher 3 string item
-    ///     This represents the original text before any modifications or translations
-    /// </summary>
-    public string OldText { get; set; } = string.Empty;
-
-    /// <summary>
     ///     Gets or sets the current text of The Witcher 3 string item
     ///     This represents the current text, which may be the original text or a translated/modified version
     /// </summary>
