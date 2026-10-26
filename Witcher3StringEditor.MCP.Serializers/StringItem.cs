@@ -1,4 +1,4 @@
-namespace Witcher3StringEditor.Serializers;
+namespace Witcher3StringEditor.MCP.Serializers;
 
 /// <summary>
 ///     Represents The Witcher 3 string item with string-based properties

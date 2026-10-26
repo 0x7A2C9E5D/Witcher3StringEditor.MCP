@@ -29,10 +29,11 @@
 
         <!-- Set recommended package metadata -->
         <PackageReadmeFile>README.md</PackageReadmeFile>
-        <PackageId>SampleMcpServer</PackageId>
+        <PackageId>Witcher3StringEditor.MCP</PackageId>
+        <PackageProjectUrl>https://github.com/0x7A2C9E5D/Witcher3StringEditor.MCP</PackageProjectUrl>
         <PackageVersion>0.1.0-beta</PackageVersion>
-        <PackageTags>AI; MCP; server; stdio</PackageTags>
-        <Description>An MCP server using the MCP C# SDK.</Description>
+        <PackageTags>AI;MCP;server;stdio;w3strings;witcher3</PackageTags>
+        <Description>MCP server for reading and editing The Witcher 3 .w3strings localization files.</Description>
     </PropertyGroup>
 
     <!-- Include additional files for browsing the MCP server. -->
@@ -51,7 +52,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Witcher3StringEditor.Serializers\Witcher3StringEditor.Serializers.csproj"/>
+        <ProjectReference Include="..\Witcher3StringEditor.MCP.Serializers\Witcher3StringEditor.MCP.Serializers.csproj"/>
     </ItemGroup>
 
 </Project>

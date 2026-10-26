@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Witcher3StringEditor.Serializers;
+namespace Witcher3StringEditor.MCP.Serializers;
 
 /// <summary>
 ///     The storage model of the w3strings format: the fixed facts of the format, and the stored form of one

@@ -1,14 +1,14 @@
 using System.Text;
 using JetBrains.Annotations;
 
-namespace Witcher3StringEditor.Serializers;
+namespace Witcher3StringEditor.MCP.Serializers;
 
 /// <summary>
 ///     The contents of a .w3strings file as they are read from it: the string items, the language the
 ///     container was written for and the encoding its texts are stored in.
 /// </summary>
 [PublicAPI]
-public sealed class W3StringsDocument
+public sealed class W3StringsFileContent
 {
     /// <summary>
     ///     The string items of the file, in container order.

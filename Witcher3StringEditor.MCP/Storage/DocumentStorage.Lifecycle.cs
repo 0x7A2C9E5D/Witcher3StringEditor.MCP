@@ -1,6 +1,6 @@
 using System.Text;
-using Witcher3StringEditor.Serializers;
-using W3StringsDocument = Witcher3StringEditor.MCP.Models.W3StringsDocument;
+using Witcher3StringEditor.MCP.Serializers;
+using Witcher3StringEditor.MCP.Models;
 
 namespace Witcher3StringEditor.MCP.Storage;
 
@@ -10,7 +10,7 @@ namespace Witcher3StringEditor.MCP.Storage;
 /// </summary>
 internal static partial class DocumentStorage
 {
-    extension(W3StringsDocument)
+    extension(W3StringsDocumentSession)
     {
         /// <summary>
         ///     Opens an existing W3Strings file, or returns the handle of the already open document for that path.
@@ -46,7 +46,7 @@ internal static partial class DocumentStorage
             await Gate.WaitAsync().ConfigureAwait(false);
             try
             {
-                var document = new W3StringsDocument
+                var document = new W3StringsDocumentSession
                 {
                     Handle = Guid.NewGuid(),
                     IsDirty = true
@@ -120,7 +120,7 @@ internal static partial class DocumentStorage
         /// <summary>
         ///     Runs a read operation against an open document while holding the gate.
         /// </summary>
-        public static Task<T> ExecuteAsync<T>(Guid handle, Func<W3StringsDocument, T> operation)
+        public static Task<T> ExecuteAsync<T>(Guid handle, Func<W3StringsDocumentSession, T> operation)
         {
             return ExecuteCoreAsync(handle, operation);
         }
@@ -128,7 +128,7 @@ internal static partial class DocumentStorage
         /// <summary>
         ///     Runs a write operation against an open document while holding the gate.
         /// </summary>
-        public static Task ExecuteAsync(Guid handle, Action<W3StringsDocument> operation)
+        public static Task ExecuteAsync(Guid handle, Action<W3StringsDocumentSession> operation)
         {
             return ExecuteCoreAsync(handle, operation);
         }
@@ -137,21 +137,21 @@ internal static partial class DocumentStorage
     /// <summary>
     ///     Loads a .w3strings file into an in-memory document.
     /// </summary>
-    private static async Task<W3StringsDocument> LoadAsync(string filePath)
+    private static async Task<W3StringsDocumentSession> LoadAsync(string filePath)
     {
         if (!File.Exists(filePath))
             throw new FileNotFoundException($"W3Strings file not found: {filePath}", filePath);
 
         var loaded = await W3StringsSerializer.Deserialize(filePath).ConfigureAwait(false);
 
-        return new W3StringsDocument
+        return new W3StringsDocumentSession
         {
             Handle = Guid.NewGuid(),
             Items = [.. loaded.Items.Select(Clone)]
         };
     }
 
-    private static async Task<T> ExecuteCoreAsync<T>(Guid handle, Func<W3StringsDocument, T> operation)
+    private static async Task<T> ExecuteCoreAsync<T>(Guid handle, Func<W3StringsDocumentSession, T> operation)
     {
         await Gate.WaitAsync().ConfigureAwait(false);
         try
@@ -164,7 +164,7 @@ internal static partial class DocumentStorage
         }
     }
 
-    private static async Task ExecuteCoreAsync(Guid handle, Action<W3StringsDocument> operation)
+    private static async Task ExecuteCoreAsync(Guid handle, Action<W3StringsDocumentSession> operation)
     {
         await Gate.WaitAsync().ConfigureAwait(false);
         try
@@ -181,7 +181,7 @@ internal static partial class DocumentStorage
     ///     Writes a document to disk and reports whether it succeeded. The caller must hold the gate.
     /// </summary>
     private static async Task<bool> SaveCoreAsync(
-        W3StringsDocument document, string? filePath, W3Language language, Encoding encoding)
+        W3StringsDocumentSession document, string? filePath, W3Language language, Encoding encoding)
     {
         var targetPath = string.IsNullOrWhiteSpace(filePath)
             ? PathsByHandle.GetValueOrDefault(document.Handle)

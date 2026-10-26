@@ -1,4 +1,4 @@
-namespace Witcher3StringEditor.Serializers;
+namespace Witcher3StringEditor.MCP.Serializers;
 
 /// <summary>
 ///     Reads a container out of the stream its stored form was read from.

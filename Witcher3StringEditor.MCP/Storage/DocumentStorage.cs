@@ -1,19 +1,19 @@
 using System.Globalization;
 using System.Text;
-using Witcher3StringEditor.Serializers;
-using W3StringsDocument = Witcher3StringEditor.MCP.Models.W3StringsDocument;
+using Witcher3StringEditor.MCP.Serializers;
+using Witcher3StringEditor.MCP.Models;
 
 namespace Witcher3StringEditor.MCP.Storage;
 
 /// <summary>
 ///     Owns the W3Strings documents held in memory: hands out handles, keeps the path mapping, serializes access
 ///     to the documents and exposes their lifecycle and item operations as extension members of
-///     <see cref="W3StringsDocument" />.
+///     <see cref="W3StringsDocumentSession" />.
 /// </summary>
 internal static partial class DocumentStorage
 {
     private static readonly SemaphoreSlim Gate = new(1, 1);
-    private static readonly Dictionary<Guid, W3StringsDocument> Documents = [];
+    private static readonly Dictionary<Guid, W3StringsDocumentSession> Documents = [];
     private static readonly Dictionary<string, Guid> HandlesByPath = new(StringComparer.OrdinalIgnoreCase);
     private static readonly Dictionary<Guid, string> PathsByHandle = [];
 
@@ -54,7 +54,7 @@ internal static partial class DocumentStorage
     /// <summary>
     ///     Gets an open document or throws when the handle is unknown.
     /// </summary>
-    private static W3StringsDocument Find(Guid handle)
+    private static W3StringsDocumentSession Find(Guid handle)
     {
         return Documents.TryGetValue(handle, out var document)
             ? document
@@ -64,7 +64,7 @@ internal static partial class DocumentStorage
     /// <summary>
     ///     Finds an item by its already normalized string id.
     /// </summary>
-    private static StringItem FindItem(W3StringsDocument document, string id)
+    private static StringItem FindItem(W3StringsDocumentSession document, string id)
     {
         return document.Items.FirstOrDefault(item => item.StrId == id)
                ?? throw new KeyNotFoundException($"A string item with id {id} does not exist.");

@@ -1,4 +1,4 @@
-namespace Witcher3StringEditor.Serializers;
+namespace Witcher3StringEditor.MCP.Serializers;
 
 /// <summary>
 ///     Writes the stored form of a container into a stream, every section in the order the format holds them.

@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace Witcher3StringEditor.Serializers;
+namespace Witcher3StringEditor.MCP.Serializers;
 
 /// <summary>
 ///     Builds a <see cref="W3StringsFile" /> from a list of string items.

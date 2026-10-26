@@ -4,8 +4,7 @@ using ModelContextProtocol.Server;
 using Serilog;
 using Witcher3StringEditor.MCP.Models;
 using Witcher3StringEditor.MCP.Storage;
-using Witcher3StringEditor.Serializers;
-using W3StringsDocument = Witcher3StringEditor.MCP.Models.W3StringsDocument;
+using Witcher3StringEditor.MCP.Serializers;
 
 namespace Witcher3StringEditor.MCP.Tools;
 
@@ -22,7 +21,7 @@ internal sealed class W3StringsDocumentTools
         [Description("Path to the .w3strings file to open.")]
         string filePath)
     {
-        var handle = await W3StringsDocument.OpenAsync(filePath).ConfigureAwait(false);
+        var handle = await W3StringsDocumentSession.OpenAsync(filePath).ConfigureAwait(false);
         Log.Information("Opened {File} as document {Handle}", filePath, handle);
         return handle;
     }
@@ -32,7 +31,7 @@ internal sealed class W3StringsDocumentTools
         "Creates a new empty document held in memory and returns a document handle. The version and language are chosen by save_document when the document is written to disk.")]
     public static async Task<Guid> CreateDocument()
     {
-        var handle = await W3StringsDocument.CreateAsync().ConfigureAwait(false);
+        var handle = await W3StringsDocumentSession.CreateAsync().ConfigureAwait(false);
         Log.Information("Created document {Handle}", handle);
         return handle;
     }
@@ -43,7 +42,7 @@ internal sealed class W3StringsDocumentTools
         [Description("Document handle returned by open_document or create_document.")]
         Guid handle)
     {
-        return W3StringsDocument.ExecuteAsync(handle, document => document.Items.Count);
+        return W3StringsDocumentSession.ExecuteAsync(handle, document => document.Items.Count);
     }
 
     [McpServerTool(Name = "is_dirty", ReadOnly = true)]
@@ -53,7 +52,7 @@ internal sealed class W3StringsDocumentTools
         [Description("Document handle returned by open_document or create_document.")]
         Guid handle)
     {
-        return W3StringsDocument.ExecuteAsync(handle, document => document.IsDirty);
+        return W3StringsDocumentSession.ExecuteAsync(handle, document => document.IsDirty);
     }
 
     [McpServerTool(Name = "navigate", ReadOnly = true)]
@@ -69,7 +68,7 @@ internal sealed class W3StringsDocumentTools
             "32-bit unsigned decimal string id of the reference item. Omit it to start from the first item.")]
         string? strId = null)
     {
-        return W3StringsDocument.ExecuteAsync(handle, document => document.Navigate(strId, offset));
+        return W3StringsDocumentSession.ExecuteAsync(handle, document => document.Navigate(strId, offset));
     }
 
     [McpServerTool(Name = "get_item", ReadOnly = true)]
@@ -80,7 +79,7 @@ internal sealed class W3StringsDocumentTools
         [Description("32-bit unsigned string id of the item, in decimal.")]
         string strId)
     {
-        return W3StringsDocument.ExecuteAsync(handle, document => document.GetItem(strId));
+        return W3StringsDocumentSession.ExecuteAsync(handle, document => document.GetItem(strId));
     }
 
     [McpServerTool(Name = "search_items", ReadOnly = true)]
@@ -94,7 +93,7 @@ internal sealed class W3StringsDocumentTools
         [Description("Match case sensitively. Defaults to false.")]
         bool caseSensitive = false)
     {
-        return W3StringsDocument.ExecuteAsync(handle,
+        return W3StringsDocumentSession.ExecuteAsync(handle,
             document => document.SearchItems(query, caseSensitive));
     }
 
@@ -107,7 +106,7 @@ internal sealed class W3StringsDocumentTools
             "Item to add. strId is a 32-bit unsigned decimal id; text is the string; keyName and keyHex are optional.")]
         StringItem item)
     {
-        await W3StringsDocument.ExecuteAsync(handle, document => document.AddItem(item)).ConfigureAwait(false);
+        await W3StringsDocumentSession.ExecuteAsync(handle, document => document.AddItem(item)).ConfigureAwait(false);
         Log.Debug("Added item {StrId} to document {Handle}", item.StrId, handle);
     }
 
@@ -127,7 +126,7 @@ internal sealed class W3StringsDocumentTools
             "New 32-bit hexadecimal key hash. Omit to keep the current hash, pass an empty string to clear it.")]
         string? keyHex = null)
     {
-        await W3StringsDocument.ExecuteAsync(handle, document => document.UpdateItem(strId, text, keyName, keyHex))
+        await W3StringsDocumentSession.ExecuteAsync(handle, document => document.UpdateItem(strId, text, keyName, keyHex))
             .ConfigureAwait(false);
         Log.Debug("Updated item {StrId} of document {Handle}", strId, handle);
     }
@@ -142,7 +141,7 @@ internal sealed class W3StringsDocumentTools
         [Description("New 32-bit unsigned decimal string id. It must not be used by another item.")]
         string newStrId)
     {
-        await W3StringsDocument.ExecuteAsync(handle, document => document.UpdateItemId(strId, newStrId))
+        await W3StringsDocumentSession.ExecuteAsync(handle, document => document.UpdateItemId(strId, newStrId))
             .ConfigureAwait(false);
         Log.Debug("Changed item id {StrId} to {NewStrId} in document {Handle}", strId, newStrId, handle);
     }
@@ -158,7 +157,7 @@ internal sealed class W3StringsDocumentTools
         [Description("New readable key name. Pass an empty string to clear the name.")]
         string keyName)
     {
-        await W3StringsDocument.ExecuteAsync(handle, document => document.UpdateItemKeyName(strId, keyName))
+        await W3StringsDocumentSession.ExecuteAsync(handle, document => document.UpdateItemKeyName(strId, keyName))
             .ConfigureAwait(false);
         Log.Debug("Set the key name of item {StrId} in document {Handle}", strId, handle);
     }
@@ -171,7 +170,7 @@ internal sealed class W3StringsDocumentTools
         [Description("32-bit unsigned decimal string id of the item to delete.")]
         string strId)
     {
-        await W3StringsDocument.ExecuteAsync(handle, document => document.DeleteItem(strId)).ConfigureAwait(false);
+        await W3StringsDocumentSession.ExecuteAsync(handle, document => document.DeleteItem(strId)).ConfigureAwait(false);
         Log.Debug("Deleted item {StrId} from document {Handle}", strId, handle);
     }
 
@@ -191,7 +190,7 @@ internal sealed class W3StringsDocumentTools
             "Language code or culture code to write the document for, for example en, cn or zh-Hans. Defaults to en.")]
         string language = "en")
     {
-        var saved = await W3StringsDocument.SaveAsync(handle, filePath, language, version).ConfigureAwait(false);
+        var saved = await W3StringsDocumentSession.SaveAsync(handle, filePath, language, version).ConfigureAwait(false);
         if (saved)
             Log.Information("Saved document {Handle} as version {Version} for {Language} to {File}",
                 handle, version, language, filePath);
@@ -210,7 +209,7 @@ internal sealed class W3StringsDocumentTools
         [Description("Save pending changes before closing. Defaults to false.")]
         bool saveBeforeClose = false)
     {
-        await W3StringsDocument.CloseAsync(handle, saveBeforeClose).ConfigureAwait(false);
+        await W3StringsDocumentSession.CloseAsync(handle, saveBeforeClose).ConfigureAwait(false);
         Log.Information("Closed document {Handle} (saved before close: {SavedBeforeClose})", handle, saveBeforeClose);
     }
 

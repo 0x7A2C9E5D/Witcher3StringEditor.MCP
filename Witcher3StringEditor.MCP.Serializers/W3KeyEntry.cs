@@ -1,4 +1,4 @@
-namespace Witcher3StringEditor.Serializers;
+namespace Witcher3StringEditor.MCP.Serializers;
 
 /// <summary>
 ///     One key of a container: the hash of a localization key, and the id it resolves to.

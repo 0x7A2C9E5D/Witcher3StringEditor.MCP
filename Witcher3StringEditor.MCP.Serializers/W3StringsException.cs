@@ -1,4 +1,4 @@
-namespace Witcher3StringEditor.Serializers;
+namespace Witcher3StringEditor.MCP.Serializers;
 
 /// <summary>
 ///     Thrown when a file is not a w3strings container this build can decode, or cannot be written as one.

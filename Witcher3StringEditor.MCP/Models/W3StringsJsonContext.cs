@@ -1,5 +1,5 @@
 using System.Text.Json.Serialization;
-using Witcher3StringEditor.Serializers;
+using Witcher3StringEditor.MCP.Serializers;
 
 namespace Witcher3StringEditor.MCP.Models;
 

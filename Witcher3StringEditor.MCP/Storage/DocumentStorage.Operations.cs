@@ -1,31 +1,30 @@
 using System.Text;
 using Witcher3StringEditor.MCP.Models;
-using Witcher3StringEditor.Serializers;
-using W3StringsDocument = Witcher3StringEditor.MCP.Models.W3StringsDocument;
+using Witcher3StringEditor.MCP.Serializers;
 
 namespace Witcher3StringEditor.MCP.Storage;
 
 /// <summary>
 ///     Reads and changes a W3Strings document held in memory, exposed as extension members of
-///     <see cref="W3StringsDocument" />.
+///     <see cref="W3StringsDocumentSession" />.
 /// </summary>
 internal static partial class DocumentStorage
 {
-    extension(W3StringsDocument document)
+    extension(W3StringsDocumentSession document)
     {
         /// <summary>
         ///     Writes the document to a .w3strings file with the given language and encoding.
         /// </summary>
         private async Task WriteAsync(string filePath, W3Language language, Encoding encoding)
         {
-            var serializedDocument = new Serializers.W3StringsDocument
+            var content = new W3StringsFileContent
             {
                 Items = document.Items,
                 Language = language,
                 Encoding = encoding
             };
 
-            var (succeeded, stream) = await W3StringsSerializer.Serialize(serializedDocument).ConfigureAwait(false);
+            var (succeeded, stream) = await W3StringsSerializer.Serialize(content).ConfigureAwait(false);
 
             if (!succeeded || stream is not MemoryStream serialized)
                 throw new InvalidOperationException(

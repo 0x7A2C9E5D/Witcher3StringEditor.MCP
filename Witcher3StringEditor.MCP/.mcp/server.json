@@ -1,12 +1,12 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
-  "description": "<your description here>",
-  "name": "io.github.<your GitHub username here>/<your repo name>",
+  "description": "MCP server for reading and editing The Witcher 3 .w3strings localization files.",
+  "name": "io.github.0x7A2C9E5D/Witcher3StringEditor.MCP",
   "version": "0.1.0-beta",
   "packages": [
     {
       "registryType": "nuget",
-      "identifier": "<your package ID here>",
+      "identifier": "Witcher3StringEditor.MCP",
       "version": "0.1.0-beta",
       "transport": {
         "type": "stdio"
@@ -16,7 +16,7 @@
     }
   ],
   "repository": {
-    "url": "https://github.com/<your GitHub username here>/<your repo name>",
+    "url": "https://github.com/0x7A2C9E5D/Witcher3StringEditor.MCP",
     "source": "github"
   }
 }

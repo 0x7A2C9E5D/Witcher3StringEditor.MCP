@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Witcher3StringEditor.Serializers;
+namespace Witcher3StringEditor.MCP.Serializers;
 
 /// <summary>
 ///     The hash of one localization key, which the game resolves key by.
