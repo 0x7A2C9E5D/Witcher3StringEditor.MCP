@@ -9,7 +9,6 @@ namespace Witcher3StringEditor.MCP.Models;
 /// </summary>
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(W3StringsDocumentInfo))]
-[JsonSerializable(typeof(W3StringsItemPage))]
 [JsonSerializable(typeof(string[]))]
 [JsonSerializable(typeof(W3StringsSearchResult))]
 [JsonSerializable(typeof(StringItem))]

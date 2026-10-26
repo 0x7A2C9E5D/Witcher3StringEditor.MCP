@@ -42,18 +42,19 @@ internal sealed class W3StringsDocumentTools
         return W3StringsDocument.GetInfoAsync(handle);
     }
 
-    [McpServerTool(Name = "list_items", ReadOnly = true)]
+    [McpServerTool(Name = "navigate", ReadOnly = true)]
     [Description(
-        "Returns one page of the string items of the document, starting at offset. Use itemCount to get the total and hasMore to check for another page.")]
-    public static Task<W3StringsItemPage> ListItems(
+        "Moves relative to an item and returns the item reached: offset 0 returns the reference item, positive offsets move forward, negative offsets move backward. Omit strId to start from the first item. Returns nothing when the target is outside the document.")]
+    public static Task<StringItem?> Navigate(
         [Description("Document handle returned by open_document or create_document.")]
         Guid handle,
-        [Description("Zero based index of the first item to return. Defaults to 0.")]
-        int offset = 0,
-        [Description("Maximum number of items to return. Defaults to 50.")]
-        int limit = DocumentStorage.DefaultPageSize)
+        [Description("Number of items to move. 0 returns the reference item, positive moves forward, negative moves backward.")]
+        int offset,
+        [Description(
+            "32-bit unsigned decimal string id of the reference item. Omit it to start from the first item.")]
+        string? strId = null)
     {
-        return W3StringsDocument.ExecuteAsync(handle, document => document.ListItems(offset, limit));
+        return W3StringsDocument.ExecuteAsync(handle, document => document.Navigate(strId, offset));
     }
 
     [McpServerTool(Name = "get_item", ReadOnly = true)]
@@ -69,21 +70,17 @@ internal sealed class W3StringsDocumentTools
 
     [McpServerTool(Name = "search_items", ReadOnly = true)]
     [Description(
-        "Searches the string items of the document by substring in their string id, text or key name and returns one page of matches. Use matchCount to get the total and hasMore to check for another page.")]
+        "Searches the string items of the document by substring in their string id, text or key name and returns all matches.")]
     public static Task<W3StringsSearchResult> SearchItems(
         [Description("Document handle returned by open_document or create_document.")]
         Guid handle,
         [Description("Substring to search for. It is matched against the string id, text and key name of every item.")]
         string query,
         [Description("Match case sensitively. Defaults to false.")]
-        bool caseSensitive = false,
-        [Description("Zero based index of the first match to return. Defaults to 0.")]
-        int offset = 0,
-        [Description("Maximum number of matches to return. Defaults to 50.")]
-        int limit = DocumentStorage.DefaultPageSize)
+        bool caseSensitive = false)
     {
         return W3StringsDocument.ExecuteAsync(handle,
-            document => document.SearchItems(query, caseSensitive, offset, limit));
+            document => document.SearchItems(query, caseSensitive));
     }
 
     [McpServerTool(Name = "add_item")]

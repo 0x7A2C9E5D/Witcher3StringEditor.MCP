@@ -44,20 +44,20 @@ internal static partial class DocumentStorage
         }
 
         /// <summary>
-        ///     Returns one page of a copy of the items of the document.
+        ///     Moves relative to an item and returns the item reached: offset 0 returns the reference item,
+        ///     a positive offset moves forward and a negative one moves backward. An empty string id starts from
+        ///     the first item; a target outside the document returns null.
         /// </summary>
-        public W3StringsItemPage ListItems(int offset, int limit)
+        public StringItem? Navigate(string? strId, int offset)
         {
-            ValidatePage(offset, limit);
+            if (document.Items.Count == 0) return null;
 
-            var page = document.Items.Skip(offset).Take(limit).Select(Clone).ToArray();
-            return new W3StringsItemPage(
-                document.Handle,
-                document.Items.Count,
-                offset,
-                limit,
-                offset + page.Length < document.Items.Count,
-                page);
+            var index = string.IsNullOrWhiteSpace(strId)
+                ? 0
+                : document.Items.IndexOf(FindItem(document, NormalizeStrId(strId)));
+            var target = index + offset;
+
+            return target >= 0 && target < document.Items.Count ? Clone(document.Items[target]) : null;
         }
 
         /// <summary>
@@ -70,11 +70,11 @@ internal static partial class DocumentStorage
         }
 
         /// <summary>
-        ///     Searches the items of the document for the given text in their string id, text or key name.
+        ///     Searches the items of the document for the given text in their string id, text or key name and
+        ///     returns every match.
         /// </summary>
-        public W3StringsSearchResult SearchItems(string query, bool caseSensitive, int offset, int limit)
+        public W3StringsSearchResult SearchItems(string query, bool caseSensitive)
         {
-            ValidatePage(offset, limit);
             if (string.IsNullOrWhiteSpace(query))
                 throw new ArgumentException("The search query must not be empty.", nameof(query));
 
@@ -85,20 +85,10 @@ internal static partial class DocumentStorage
                     item.StrId.Contains(query, comparison) ||
                     item.Text.Contains(query, comparison) ||
                     item.KeyName.Contains(query, comparison))
+                .Select(Clone)
                 .ToArray();
 
-            var page = matches.Skip(offset).Take(limit).Select(Clone).ToArray();
-
-            return new W3StringsSearchResult(
-                document.Handle,
-                query,
-                caseSensitive,
-                matches.Length,
-                document.Items.Count,
-                offset,
-                limit,
-                offset + page.Length < matches.Length,
-                page);
+            return new W3StringsSearchResult(document.Handle, query, caseSensitive, matches.Length, matches);
         }
 
         /// <summary>

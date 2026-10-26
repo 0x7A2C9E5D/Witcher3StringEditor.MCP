@@ -12,8 +12,6 @@ namespace Witcher3StringEditor.MCP.Storage;
 /// </summary>
 internal static partial class DocumentStorage
 {
-    internal const int DefaultPageSize = 50;
-
     private static readonly SemaphoreSlim Gate = new(1, 1);
     private static readonly Dictionary<Guid, W3StringsDocument> Documents = [];
     private static readonly Dictionary<string, Guid> HandlesByPath = new(StringComparer.OrdinalIgnoreCase);
@@ -61,16 +59,6 @@ internal static partial class DocumentStorage
         return Documents.TryGetValue(handle, out var document)
             ? document
             : throw new KeyNotFoundException($"Unknown document handle: {handle}");
-    }
-
-    /// <summary>
-    ///     Validates the paging arguments before the items are read.
-    /// </summary>
-    private static void ValidatePage(int offset, int limit)
-    {
-        if (offset < 0) throw new ArgumentException("offset must not be negative.", nameof(offset));
-
-        if (limit < 1) throw new ArgumentException("limit must be at least 1.", nameof(limit));
     }
 
     /// <summary>
