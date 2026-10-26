@@ -18,7 +18,7 @@ internal static partial class DocumentStorage
         /// </summary>
         private W3StringsDocumentInfo Info()
         {
-            return new W3StringsDocumentInfo(document.Handle, document.Items.Count, document.Dirty);
+            return new W3StringsDocumentInfo(document.Handle, document.Items.Count, document.IsDirty);
         }
 
         /// <summary>
@@ -119,7 +119,7 @@ internal static partial class DocumentStorage
                 Text = item.Text
             });
 
-            document.Dirty = true;
+            document.IsDirty = true;
         }
 
         /// <summary>
@@ -155,7 +155,7 @@ internal static partial class DocumentStorage
                 changed = true;
             }
 
-            if (changed) document.Dirty = true;
+            if (changed) document.IsDirty = true;
         }
 
         /// <summary>
@@ -172,7 +172,7 @@ internal static partial class DocumentStorage
                 throw new InvalidOperationException($"A string item with id {newId} already exists.");
 
             item.StrId = newId;
-            document.Dirty = true;
+            document.IsDirty = true;
         }
 
         /// <summary>
@@ -188,7 +188,7 @@ internal static partial class DocumentStorage
             item.KeyName = name;
             // The old hash no longer belongs to the name, so it is cleared and recalculated on save.
             item.KeyHex = string.Empty;
-            document.Dirty = true;
+            document.IsDirty = true;
         }
 
         /// <summary>
@@ -198,7 +198,7 @@ internal static partial class DocumentStorage
         {
             var id = NormalizeStrId(strId);
             document.Items.Remove(FindItem(document, id));
-            document.Dirty = true;
+            document.IsDirty = true;
         }
     }
 }

@@ -29,6 +29,7 @@ internal static partial class DocumentStorage
 
                 Documents[document.Handle] = document;
                 HandlesByPath[fullPath] = document.Handle;
+                PathsByHandle[document.Handle] = fullPath;
                 return document.Info();
             }
             finally
@@ -38,24 +39,18 @@ internal static partial class DocumentStorage
         }
 
         /// <summary>
-        ///     Creates an empty document that is only held in memory until it is saved. The version decides the
-        ///     encoding of the document: 162 and 163 are UTF-16LE, 164 is UTF-8.
+        ///     Creates an empty document that is only held in memory until it is saved. The version and language
+        ///     are chosen when the document is saved.
         /// </summary>
-        public static async Task<W3StringsDocumentInfo> CreateAsync(string version)
+        public static async Task<W3StringsDocumentInfo> CreateAsync()
         {
-            var encoding = ResolveVersion(version) ??
-                           throw new ArgumentException(
-                               "A version is required to create a document: 162 or 163 (UTF-16LE), 164 (UTF-8).",
-                               nameof(version));
-
             await Gate.WaitAsync().ConfigureAwait(false);
             try
             {
                 var document = new W3StringsDocument
                 {
                     Handle = Guid.NewGuid(),
-                    Encoding = encoding,
-                    Dirty = true
+                    IsDirty = true
                 };
 
                 Documents[document.Handle] = document;
@@ -77,19 +72,19 @@ internal static partial class DocumentStorage
 
         /// <summary>
         ///     Writes the document to disk, optionally to a different path, with the given language and container
-        ///     version. Versions 162 and 163 write UTF-16LE, version 164 writes UTF-8; when no version is given the
-        ///     version the document already uses is kept.
+        ///     version. Versions 162 and 163 write UTF-16LE, version 164 writes UTF-8; a version is always
+        ///     required because the document does not keep one.
         /// </summary>
         public static async Task<W3StringsDocumentInfo> SaveAsync(
-            Guid handle, string? filePath, string languageCode, string? version)
+            Guid handle, string? filePath, string languageCode, string version)
         {
             var language = ResolveLanguage(languageCode);
+            var encoding = ResolveVersion(version);
 
             await Gate.WaitAsync().ConfigureAwait(false);
             try
             {
                 var document = Find(handle);
-                var encoding = ResolveVersion(version) ?? document.Encoding ?? Encoding.UTF8;
                 return await SaveCoreAsync(document, filePath, language, encoding).ConfigureAwait(false);
             }
             finally
@@ -108,17 +103,22 @@ internal static partial class DocumentStorage
             {
                 var document = Find(handle);
 
-                if (saveBeforeClose && document.Dirty)
+                if (saveBeforeClose && document.IsDirty)
                 {
+                    if (!PathsByHandle.TryGetValue(document.Handle, out var path))
+                        throw new ArgumentException(
+                            "The document has never been saved, so there is no file to save before closing.",
+                            nameof(saveBeforeClose));
+
+                    var existing = await W3StringsSerializer.Deserialize(path).ConfigureAwait(false);
+
                     await SaveCoreAsync(
-                        document,
-                        null,
-                        document.Language ?? W3Language.Default,
-                        document.Encoding ?? Encoding.UTF8).ConfigureAwait(false);
+                        document, path, existing.Language ?? W3Language.Default, existing.Encoding)
+                        .ConfigureAwait(false);
                 }
 
                 Documents.Remove(document.Handle);
-                if (document.FilePath is not null) HandlesByPath.Remove(document.FilePath);
+                if (PathsByHandle.Remove(document.Handle, out var closedPath)) HandlesByPath.Remove(closedPath);
             }
             finally
             {
@@ -156,9 +156,6 @@ internal static partial class DocumentStorage
         return new W3StringsDocument
         {
             Handle = Guid.NewGuid(),
-            FilePath = filePath,
-            Language = loaded.Language,
-            Encoding = loaded.Encoding,
             Items = [.. loaded.Items.Select(Clone)]
         };
     }
@@ -195,27 +192,27 @@ internal static partial class DocumentStorage
     private static async Task<W3StringsDocumentInfo> SaveCoreAsync(
         W3StringsDocument document, string? filePath, W3Language language, Encoding encoding)
     {
-        var targetPath = string.IsNullOrWhiteSpace(filePath) ? document.FilePath : Path.GetFullPath(filePath);
+        var targetPath = string.IsNullOrWhiteSpace(filePath)
+            ? PathsByHandle.GetValueOrDefault(document.Handle)
+            : Path.GetFullPath(filePath);
 
         if (string.IsNullOrWhiteSpace(targetPath))
             throw new ArgumentException(
-                "filePath is required to save a document that was created without a path.", nameof(filePath));
+                "filePath is required to save a document that has no path yet.", nameof(filePath));
 
         if (HandlesByPath.TryGetValue(targetPath, out var owner) && owner != document.Handle)
             throw new InvalidOperationException($"The path is already open as document {owner}: {targetPath}");
 
         await document.WriteAsync(targetPath, language, encoding).ConfigureAwait(false);
 
-        if (document.FilePath is not null &&
-            !string.Equals(document.FilePath, targetPath, StringComparison.OrdinalIgnoreCase))
-            HandlesByPath.Remove(document.FilePath);
+        if (PathsByHandle.TryGetValue(document.Handle, out var previousPath) &&
+            !string.Equals(previousPath, targetPath, StringComparison.OrdinalIgnoreCase))
+            HandlesByPath.Remove(previousPath);
 
-        document.FilePath = targetPath;
-        document.Language = language;
-        document.Encoding = encoding;
+        PathsByHandle[document.Handle] = targetPath;
         HandlesByPath[targetPath] = document.Handle;
 
-        document.Dirty = false;
+        document.IsDirty = false;
         return document.Info();
     }
 }

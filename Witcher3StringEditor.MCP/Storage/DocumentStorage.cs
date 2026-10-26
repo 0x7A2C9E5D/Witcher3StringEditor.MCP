@@ -17,6 +17,7 @@ internal static partial class DocumentStorage
     private static readonly SemaphoreSlim Gate = new(1, 1);
     private static readonly Dictionary<Guid, W3StringsDocument> Documents = [];
     private static readonly Dictionary<string, Guid> HandlesByPath = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly Dictionary<Guid, string> PathsByHandle = [];
 
     /// <summary>
     ///     Resolves the language of a .w3strings file from its user facing name.
@@ -33,12 +34,14 @@ internal static partial class DocumentStorage
     /// <summary>
     ///     Resolves the encoding from the W3Strings container version. Versions 162 and 163 are the UTF-16LE
     ///     generation used by the classic and next-gen editions (both are written as 162); version 164 is the
-    ///     UTF-8 generation used by the remastered edition. Returns null when no version is given so callers can
-    ///     keep the version the document already uses.
+    ///     UTF-8 generation used by the remastered edition. A version is required because the document itself
+    ///     does not keep one.
     /// </summary>
-    private static Encoding? ResolveVersion(string? version)
+    private static Encoding ResolveVersion(string? version)
     {
-        if (string.IsNullOrWhiteSpace(version)) return null;
+        if (string.IsNullOrWhiteSpace(version))
+            throw new ArgumentException(
+                "A version is required to save a document: 162 or 163 (UTF-16LE), 164 (UTF-8).", nameof(version));
 
         return version.Trim().ToLowerInvariant() switch
         {
