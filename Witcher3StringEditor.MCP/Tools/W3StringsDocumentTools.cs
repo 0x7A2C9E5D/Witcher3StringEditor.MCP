@@ -12,7 +12,7 @@ namespace Witcher3StringEditor.MCP.Tools;
 ///     MCP tools that manage W3Strings documents held in memory by the server.
 ///     Every document is created by open/create, which returns the handle all other tools work with.
 /// </summary>
-[UsedImplicitly]
+[PublicAPI]
 internal sealed class W3StringsDocumentTools
 {
     [McpServerTool(Name = "open_document", ReadOnly = true)]
