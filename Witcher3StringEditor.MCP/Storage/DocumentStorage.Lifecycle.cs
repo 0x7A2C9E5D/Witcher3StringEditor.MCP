@@ -25,7 +25,7 @@ internal static partial class DocumentStorage
             {
                 if (HandlesByPath.TryGetValue(fullPath, out var opened)) return Documents[opened].Info();
 
-                var document = await LoadAsync(fullPath, Guid.NewGuid()).ConfigureAwait(false);
+                var document = await LoadAsync(fullPath).ConfigureAwait(false);
 
                 Documents[document.Handle] = document;
                 HandlesByPath[fullPath] = document.Handle;
@@ -146,7 +146,7 @@ internal static partial class DocumentStorage
     /// <summary>
     ///     Loads a .w3strings file into an in-memory document.
     /// </summary>
-    private static async Task<W3StringsDocument> LoadAsync(string filePath, Guid handle)
+    private static async Task<W3StringsDocument> LoadAsync(string filePath)
     {
         if (!File.Exists(filePath))
             throw new FileNotFoundException($"W3Strings file not found: {filePath}", filePath);
@@ -155,7 +155,7 @@ internal static partial class DocumentStorage
 
         return new W3StringsDocument
         {
-            Handle = handle,
+            Handle = Guid.NewGuid(),
             FilePath = filePath,
             Language = loaded.Language,
             Encoding = loaded.Encoding,
