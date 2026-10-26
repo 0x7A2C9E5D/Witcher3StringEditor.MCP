@@ -19,10 +19,11 @@ try
     });
     
     Log.Logger = new LoggerConfiguration()
+        .MinimumLevel.Verbose()
         .WriteTo.Console(standardErrorFromLevel: LogEventLevel.Verbose)
         .WriteTo.File("log.txt", rollOnFileSizeLimit: true)
         .CreateLogger();
-    
+
     builder.Logging.AddSerilog();
 
     builder.Services
