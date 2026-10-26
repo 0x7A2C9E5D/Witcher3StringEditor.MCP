@@ -148,8 +148,8 @@ After restarting the client, the server should expose **15 tools** (`open_docume
 
 - Check that `dnx` resolves: `dnx --help` must work in a terminal (otherwise install the .NET 10 SDK).
 - Check that the configured version actually exists on NuGet.org.
-- Read `log.txt` in the server's working directory — the client only shows a generic error, the real
-  exception is always in that log.
+- Read the log — the client only shows a generic error, the real exception is always in
+  `%LOCALAPPDATA%\Witcher3StringEditor.MCP\logs\log.txt`.
 
 ## Build from source
 
@@ -169,7 +169,10 @@ all of them must be pushed to NuGet.org for `dnx` to resolve the right binary.
   and next-gen builds.
 - Zero-hash key entries are dropped on save.
 - The server has no undo: save to a new file when editing game content.
-- Diagnostics are written to `log.txt` in the working directory, not to the client.
+- Diagnostics go to the user's local application data, never to stdout and never to the working
+  directory: `%LOCALAPPDATA%\Witcher3StringEditor.MCP\logs\log.txt` on Windows and
+  `~/.local/share/Witcher3StringEditor.MCP/logs/log.txt` on Unix-like systems. The file rotates at
+  10 MB and the last three files are kept.
 
 ## License
 

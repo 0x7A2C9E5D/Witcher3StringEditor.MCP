@@ -1,4 +1,10 @@
 <Solution>
-    <Project Path="Witcher3StringEditor.MCP/Witcher3StringEditor.MCP.csproj"/>
-    <Project Path="Witcher3StringEditor.MCP.Serializers/Witcher3StringEditor.MCP.Serializers.csproj"/>
+    <Project Path="Witcher3StringEditor.MCP/Witcher3StringEditor.MCP.csproj">
+        <Platform Solution="*|x64" Project="x64" />
+    </Project>
+    <Configurations>
+        <Platform Name="Any CPU" />
+        <Platform Name="x64" />
+    </Configurations>
+    <Project Path="Witcher3StringEditor.MCP.Serializers/Witcher3StringEditor.MCP.Serializers.csproj" />
 </Solution>

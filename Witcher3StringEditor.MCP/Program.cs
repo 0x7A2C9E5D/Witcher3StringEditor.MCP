@@ -14,13 +14,16 @@ try
     var builder = Host.CreateApplicationBuilder(args);
     
     builder.Logging.ClearProviders();
-
     Log.Logger = new LoggerConfiguration()
         .MinimumLevel.Verbose()
         .WriteTo.Console(standardErrorFromLevel: LogEventLevel.Verbose)
-        .WriteTo.File("log.txt", rollOnFileSizeLimit: true)
+        .WriteTo.File(
+            Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Witcher3StringEditor.MCP",
+                "logs", "log.txt"),
+            rollingInterval: RollingInterval.Day)
         .CreateLogger();
-
     builder.Logging.AddSerilog();
 
     builder.Services
