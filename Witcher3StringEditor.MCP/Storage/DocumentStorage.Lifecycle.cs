@@ -66,7 +66,7 @@ internal static partial class DocumentStorage
         ///     version. Versions 162 and 163 write UTF-16LE, version 164 writes UTF-8; a version is always
         ///     required because the document does not keep one.
         /// </summary>
-        public static async Task SaveAsync(
+        public static async Task<bool> SaveAsync(
             Guid handle, string? filePath, string languageCode, string version)
         {
             var language = ResolveLanguage(languageCode);
@@ -76,7 +76,7 @@ internal static partial class DocumentStorage
             try
             {
                 var document = Find(handle);
-                await SaveCoreAsync(document, filePath, language, encoding).ConfigureAwait(false);
+                return await SaveCoreAsync(document, filePath, language, encoding).ConfigureAwait(false);
             }
             finally
             {
@@ -178,9 +178,9 @@ internal static partial class DocumentStorage
     }
 
     /// <summary>
-    ///     Writes a document to disk. The caller must hold the gate.
+    ///     Writes a document to disk and reports whether it succeeded. The caller must hold the gate.
     /// </summary>
-    private static async Task SaveCoreAsync(
+    private static async Task<bool> SaveCoreAsync(
         W3StringsDocument document, string? filePath, W3Language language, Encoding encoding)
     {
         var targetPath = string.IsNullOrWhiteSpace(filePath)
@@ -204,5 +204,6 @@ internal static partial class DocumentStorage
         HandlesByPath[targetPath] = document.Handle;
 
         document.IsDirty = false;
+        return true;
     }
 }

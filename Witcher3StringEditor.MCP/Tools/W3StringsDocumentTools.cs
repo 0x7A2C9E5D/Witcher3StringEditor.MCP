@@ -163,8 +163,8 @@ internal sealed class W3StringsDocumentTools
 
     [McpServerTool(Name = "save_document", Destructive = true)]
     [Description(
-        "Writes the document to disk, overwriting the target file. The version is always required; the path is required for a document that was never saved; language and version are the values written to the file.")]
-    public static Task SaveDocument(
+        "Writes the document to disk, overwriting the target file, and returns true when it was written. The version is always required; the path is required for a document that was never saved; language and version are the values written to the file.")]
+    public static Task<bool> SaveDocument(
         [Description("Document handle returned by open_document or create_document.")]
         Guid handle,
         [Description(
