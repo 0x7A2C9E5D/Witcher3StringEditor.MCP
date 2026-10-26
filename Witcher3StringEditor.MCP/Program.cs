@@ -12,12 +12,9 @@ using Witcher3StringEditor.MCP.Tools;
 try
 {
     var builder = Host.CreateApplicationBuilder(args);
-
-    builder.Logging.AddConsole(consoleLogOptions =>
-    {
-        consoleLogOptions.LogToStandardErrorThreshold = LogLevel.Trace;
-    });
     
+    builder.Logging.ClearProviders();
+
     Log.Logger = new LoggerConfiguration()
         .MinimumLevel.Verbose()
         .WriteTo.Console(standardErrorFromLevel: LogEventLevel.Verbose)
