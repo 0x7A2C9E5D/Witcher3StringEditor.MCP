@@ -1,14 +1,12 @@
 using System.Globalization;
-using System.Text;
-using Witcher3StringEditor.MCP.Serializers;
 using Witcher3StringEditor.MCP.Models;
+using Witcher3StringEditor.MCP.Serializers;
 
 namespace Witcher3StringEditor.MCP.Storage;
 
 /// <summary>
-///     Owns the W3Strings documents held in memory: hands out handles, keeps the path mapping, serializes access
-///     to the documents and exposes their lifecycle and item operations as extension members of
-///     <see cref="W3StringsDocumentSession" />.
+///     Owns the documents held in memory: their handles, the path mapping, the serialization gate and the
+///     lookups and helpers shared by the document lifecycle and the item operations.
 /// </summary>
 internal static partial class DocumentStorage
 {
@@ -17,38 +15,23 @@ internal static partial class DocumentStorage
     private static readonly Dictionary<string, Guid> HandlesByPath = new(StringComparer.OrdinalIgnoreCase);
     private static readonly Dictionary<Guid, string> PathsByHandle = [];
 
-    /// <summary>
-    ///     Resolves the language of a .w3strings file from its user facing name.
-    /// </summary>
-    private static W3Language ResolveLanguage(string? code)
+    extension(W3StringsDocumentSession)
     {
-        var language = W3Language.FromCode(code ?? "en");
-        return language ?? throw new ArgumentException(
-            $"Unknown language code: {code}. Supported codes: " +
-            $"{string.Join(", ", W3Language.All.Select(item => item.Code))}.",
-            nameof(code));
-    }
-
-    /// <summary>
-    ///     Resolves the encoding from the W3Strings container version. Versions 162 and 163 are the UTF-16LE
-    ///     generation used by the classic and next-gen editions (both are written as 162); version 164 is the
-    ///     UTF-8 generation used by the remastered edition. A version is required because the document itself
-    ///     does not keep one.
-    /// </summary>
-    private static Encoding ResolveVersion(string? version)
-    {
-        if (string.IsNullOrWhiteSpace(version))
-            throw new ArgumentException(
-                "A version is required to save a document: 162 or 163 (UTF-16LE), 164 (UTF-8).", nameof(version));
-
-        return version.Trim().ToLowerInvariant() switch
+        /// <summary>
+        ///     Runs a read operation against an open document while holding the gate.
+        /// </summary>
+        public static Task<T> ExecuteAsync<T>(Guid handle, Func<W3StringsDocumentSession, T> operation)
         {
-            "162" or "v162" or "163" or "v163" => Encoding.Unicode,
-            "164" or "v164" => Encoding.UTF8,
-            _ => throw new ArgumentException(
-                $"Unknown version: {version}. Supported versions: 162 and 163 (UTF-16LE), 164 (UTF-8).",
-                nameof(version))
-        };
+            return ExecuteCoreAsync(handle, operation);
+        }
+
+        /// <summary>
+        ///     Runs a write operation against an open document while holding the gate.
+        /// </summary>
+        public static Task ExecuteAsync(Guid handle, Action<W3StringsDocumentSession> operation)
+        {
+            return ExecuteCoreAsync(handle, operation);
+        }
     }
 
     /// <summary>
@@ -102,5 +85,31 @@ internal static partial class DocumentStorage
             KeyName = item.KeyName,
             Text = item.Text
         };
+    }
+
+    private static async Task<T> ExecuteCoreAsync<T>(Guid handle, Func<W3StringsDocumentSession, T> operation)
+    {
+        await Gate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            return operation(Find(handle));
+        }
+        finally
+        {
+            Gate.Release();
+        }
+    }
+
+    private static async Task ExecuteCoreAsync(Guid handle, Action<W3StringsDocumentSession> operation)
+    {
+        await Gate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            operation(Find(handle));
+        }
+        finally
+        {
+            Gate.Release();
+        }
     }
 }

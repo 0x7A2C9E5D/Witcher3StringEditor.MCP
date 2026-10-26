@@ -1,39 +1,16 @@
-using System.Text;
 using Witcher3StringEditor.MCP.Models;
 using Witcher3StringEditor.MCP.Serializers;
 
 namespace Witcher3StringEditor.MCP.Storage;
 
 /// <summary>
-///     Reads and changes a W3Strings document held in memory, exposed as extension members of
-///     <see cref="W3StringsDocumentSession" />.
+///     The string items of an open document: navigation, lookup, search and the add, update and delete
+///     operations, exposed as extension members of <see cref="W3StringsDocumentSession" />.
 /// </summary>
 internal static partial class DocumentStorage
 {
     extension(W3StringsDocumentSession document)
     {
-        /// <summary>
-        ///     Writes the document to a .w3strings file with the given language and encoding.
-        /// </summary>
-        private async Task WriteAsync(string filePath, W3Language language, Encoding encoding)
-        {
-            var content = new W3StringsFileContent
-            {
-                Items = document.Items,
-                Language = language,
-                Encoding = encoding
-            };
-
-            var (succeeded, stream) = await W3StringsSerializer.Serialize(content).ConfigureAwait(false);
-
-            if (!succeeded || stream is not MemoryStream serialized)
-                throw new InvalidOperationException(
-                    "The document could not be serialized. Check that every string id is a unique 32-bit unsigned " +
-                    "integer and that every key hash is a 32-bit hexadecimal value.");
-
-            await File.WriteAllBytesAsync(filePath, serialized.ToArray()).ConfigureAwait(false);
-        }
-
         /// <summary>
         ///     Moves relative to an item and returns the item reached: offset 0 returns the reference item,
         ///     a positive offset moves forward and a negative one moves backward. An empty string id starts from

@@ -1,12 +1,12 @@
 using System.Text;
-using Witcher3StringEditor.MCP.Serializers;
 using Witcher3StringEditor.MCP.Models;
+using Witcher3StringEditor.MCP.Serializers;
 
 namespace Witcher3StringEditor.MCP.Storage;
 
 /// <summary>
-///     The lifecycle of the documents held in memory: opening, creating, saving, closing and running operations
-///     under the serialization gate.
+///     The lifecycle of the documents held in memory: opening, creating, saving and closing them, together with
+///     the file load and write steps those operations use.
 /// </summary>
 internal static partial class DocumentStorage
 {
@@ -116,22 +116,40 @@ internal static partial class DocumentStorage
                 Gate.Release();
             }
         }
+    }
 
-        /// <summary>
-        ///     Runs a read operation against an open document while holding the gate.
-        /// </summary>
-        public static Task<T> ExecuteAsync<T>(Guid handle, Func<W3StringsDocumentSession, T> operation)
-        {
-            return ExecuteCoreAsync(handle, operation);
-        }
+    /// <summary>
+    ///     Resolves the language of a .w3strings file from its user facing name.
+    /// </summary>
+    private static W3Language ResolveLanguage(string? code)
+    {
+        var language = W3Language.FromCode(code ?? "en");
+        return language ?? throw new ArgumentException(
+            $"Unknown language code: {code}. Supported codes: " +
+            $"{string.Join(", ", W3Language.All.Select(item => item.Code))}.",
+            nameof(code));
+    }
 
-        /// <summary>
-        ///     Runs a write operation against an open document while holding the gate.
-        /// </summary>
-        public static Task ExecuteAsync(Guid handle, Action<W3StringsDocumentSession> operation)
+    /// <summary>
+    ///     Resolves the encoding from the W3Strings container version. Versions 162 and 163 are the UTF-16LE
+    ///     generation used by the classic and next-gen editions (both are written as 162); version 164 is the
+    ///     UTF-8 generation used by the remastered edition. A version is required because the document itself
+    ///     does not keep one.
+    /// </summary>
+    private static Encoding ResolveVersion(string? version)
+    {
+        if (string.IsNullOrWhiteSpace(version))
+            throw new ArgumentException(
+                "A version is required to save a document: 162 or 163 (UTF-16LE), 164 (UTF-8).", nameof(version));
+
+        return version.Trim().ToLowerInvariant() switch
         {
-            return ExecuteCoreAsync(handle, operation);
-        }
+            "162" or "v162" or "163" or "v163" => Encoding.Unicode,
+            "164" or "v164" => Encoding.UTF8,
+            _ => throw new ArgumentException(
+                $"Unknown version: {version}. Supported versions: 162 and 163 (UTF-16LE), 164 (UTF-8).",
+                nameof(version))
+        };
     }
 
     /// <summary>
@@ -151,30 +169,27 @@ internal static partial class DocumentStorage
         };
     }
 
-    private static async Task<T> ExecuteCoreAsync<T>(Guid handle, Func<W3StringsDocumentSession, T> operation)
+    /// <summary>
+    ///     Writes the document to a .w3strings file with the given language and encoding.
+    /// </summary>
+    private static async Task WriteAsync(
+        W3StringsDocumentSession document, string filePath, W3Language language, Encoding encoding)
     {
-        await Gate.WaitAsync().ConfigureAwait(false);
-        try
+        var content = new W3StringsFileContent
         {
-            return operation(Find(handle));
-        }
-        finally
-        {
-            Gate.Release();
-        }
-    }
+            Items = document.Items,
+            Language = language,
+            Encoding = encoding
+        };
 
-    private static async Task ExecuteCoreAsync(Guid handle, Action<W3StringsDocumentSession> operation)
-    {
-        await Gate.WaitAsync().ConfigureAwait(false);
-        try
-        {
-            operation(Find(handle));
-        }
-        finally
-        {
-            Gate.Release();
-        }
+        var (succeeded, stream) = await W3StringsSerializer.Serialize(content).ConfigureAwait(false);
+
+        if (!succeeded || stream is not MemoryStream serialized)
+            throw new InvalidOperationException(
+                "The document could not be serialized. Check that every string id is a unique 32-bit unsigned " +
+                "integer and that every key hash is a 32-bit hexadecimal value.");
+
+        await File.WriteAllBytesAsync(filePath, serialized.ToArray()).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -194,7 +209,7 @@ internal static partial class DocumentStorage
         if (HandlesByPath.TryGetValue(targetPath, out var owner) && owner != document.Handle)
             throw new InvalidOperationException($"The path is already open as document {owner}: {targetPath}");
 
-        await document.WriteAsync(targetPath, language, encoding).ConfigureAwait(false);
+        await WriteAsync(document, targetPath, language, encoding).ConfigureAwait(false);
 
         if (PathsByHandle.TryGetValue(document.Handle, out var previousPath) &&
             !string.Equals(previousPath, targetPath, StringComparison.OrdinalIgnoreCase))
