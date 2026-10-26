@@ -1,106 +1,176 @@
-# MCP Server
+# Witcher 3 String Editor MCP
 
-This README was created using the C# MCP server project template.
-It demonstrates how you can easily create an MCP server using C# and publish it as a NuGet package.
+<!-- mcp-name: io.github.0x7A2C9E5D/Witcher3StringEditor.MCP -->
 
-The MCP server is built as a self-contained application and does not require the .NET runtime to be installed on the
-target machine.
-However, since it is self-contained, it must be built for each target platform separately.
-By default, the template is configured to build for:
+A local (stdio) [MCP](https://modelcontextprotocol.io/) server for reading and editing
+The Witcher 3 `.w3strings` localization files — inspect entries, search text, translate or replace
+strings, add/delete entries, and save as version `162`/`163`/`164`.
 
-* `win-x64`
-* `win-arm64`
-* `osx-arm64`
-* `linux-x64`
-* `linux-arm64`
-* `linux-musl-x64`
+Every operation works on an **in-memory document** identified by a `Guid` handle; only
+`save_document` writes to disk, so you can edit a game file without touching the original.
 
-If your users require more platforms to be supported, update the list of runtime identifiers in the project's
-`<RuntimeIdentifiers />` element.
+## Tools
 
-See [aka.ms/nuget/mcp/guide](https://aka.ms/nuget/mcp/guide) for the full guide.
+| Tool | Description |
+| --- | --- |
+| `open_document` | Open a `.w3strings` file, returns a document handle |
+| `create_document` | Create a new empty document |
+| `count` | Number of entries in a document |
+| `is_dirty` | Whether the document has unsaved changes |
+| `navigate` | Move relative to an entry (`offset`, optional `strId`) |
+| `get_item` | Get one entry by `strId` |
+| `search_items` | Substring search over id, text and key name |
+| `add_item` | Add a new entry |
+| `update_item` | Change text / key name / key hash of an entry |
+| `update_item_id` | Change the `strId` of an entry |
+| `update_item_key_name` | Set the key name (in memory; only the hash is saved) |
+| `delete_item` | Delete an entry |
+| `save_document` | Write the document to disk (`version`, `filePath`, `language`) |
+| `close_document` | Close a document and release its handle |
+| `list_languages` | List the supported language codes |
 
-## Checklist before publishing to NuGet.org
+## Install
 
-- Test the MCP server locally using the steps below.
-- Update the package metadata in the .csproj file, in particular the `<PackageId>`.
-- Update `.mcp/server.json` to declare your MCP server's inputs.
-    - See [configuring inputs](https://aka.ms/nuget/mcp/guide/configuring-inputs) for more details.
-- Pack the project using `dotnet pack`.
+The package is a .NET tool, so clients launch it through
+[`dnx`](https://learn.microsoft.com/dotnet/core/tools/dotnet-tool-execute), which ships with the
+.NET 10 SDK. There is nothing to install globally and nothing to add to `PATH` — the first launch
+downloads the package from NuGet.org.
 
-The `bin/Release` directory will contain the package file (.nupkg), which can
-be [published to NuGet.org](https://learn.microsoft.com/nuget/nuget-org/publish-a-package).
+All configurations below launch the same stdio command:
 
-## Developing locally
-
-To test this MCP server from source code (locally) without using a built MCP server package, you can configure your IDE
-to run the project directly using `dotnet run`.
-
-```json
-{
-  "servers": {
-    "Witcher3StringEditor.MCP": {
-      "type": "stdio",
-      "command": "dotnet",
-      "args": [
-        "run",
-        "--project",
-        "<PATH TO PROJECT DIRECTORY>"
-      ]
-    }
-  }
-}
+```
+dnx Witcher3StringEditor.MCP@0.1.0-beta --yes
 ```
 
-Refer to the VS Code or Visual Studio documentation for more information on configuring and using MCP servers:
+`--yes` skips the download confirmation prompt; `@0.1.0-beta` pins the version, so upgrade by
+editing that number and restarting the client.
 
-- [Use MCP servers in VS Code](https://code.visualstudio.com/docs/copilot/chat/mcp-servers)
-- [Use MCP servers in Visual Studio](https://learn.microsoft.com/visualstudio/ide/mcp-servers)
+### VS Code
 
-## Testing the MCP Server
-
-Once configured, you can ask Copilot Chat for a random number, for example, `Give me 3 random numbers`. It should prompt
-you to use the `get_random_number` tool on the `Witcher3StringEditor.MCP` MCP server and show you the results.
-
-## Publishing to NuGet.org
-
-1. Run `dotnet pack -c Release` to create the NuGet package
-2. Publish to NuGet.org with
-   `dotnet nuget push bin/Release/*.nupkg --api-key <your-api-key> --source https://api.nuget.org/v3/index.json`
-
-## Using the MCP Server from NuGet.org
-
-Once the MCP server package is published to NuGet.org, you can configure it in your preferred IDE. Both VS Code and
-Visual Studio use the `dnx` command to download and install the MCP server package from NuGet.org.
-
-- **VS Code**: Create a `<WORKSPACE DIRECTORY>/.vscode/mcp.json` file
-- **Visual Studio**: Create a `<SOLUTION DIRECTORY>\.mcp.json` file
-
-For both VS Code and Visual Studio, the configuration file uses the following server definition:
+Create `.vscode/mcp.json` in the workspace (or run **MCP: Add Server** from the Command Palette):
 
 ```json
 {
   "servers": {
-    "Witcher3StringEditor.MCP": {
+    "w3strings": {
       "type": "stdio",
       "command": "dnx",
-      "args": [
-        "<your package ID here>",
-        "--version",
-        "<your package version here>",
-        "--yes"
-      ]
+      "args": ["Witcher3StringEditor.MCP@0.1.0-beta", "--yes"]
     }
   }
 }
 ```
 
-## More information
+### Visual Studio
 
-.NET MCP servers use the [ModelContextProtocol](https://www.nuget.org/packages/ModelContextProtocol) C# SDK. For more
-information about MCP:
+Create `.mcp.json` next to the `.sln`/`.slnx`. The `servers` block is identical to the VS Code one
+above; Visual Studio reads the same file format.
 
-- [Official Documentation](https://modelcontextprotocol.io/)
-- [Protocol Specification](https://spec.modelcontextprotocol.io/)
-- [GitHub Organization](https://github.com/modelcontextprotocol)
-- [MCP C# SDK](https://csharp.sdk.modelcontextprotocol.io/)
+### Cursor
+
+Create `.cursor/mcp.json` in the project (or `~/.cursor/mcp.json` for all projects). Cursor uses the
+`mcpServers` key:
+
+```json
+{
+  "mcpServers": {
+    "w3strings": {
+      "command": "dnx",
+      "args": ["Witcher3StringEditor.MCP@0.1.0-beta", "--yes"]
+    }
+  }
+}
+```
+
+### Claude Code
+
+```powershell
+claude mcp add w3strings -- dnx Witcher3StringEditor.MCP@0.1.0-beta --yes
+```
+
+### Claude Desktop
+
+Edit `%APPDATA%\Claude\claude_desktop_config.json` (macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "w3strings": {
+      "command": "dnx",
+      "args": ["Witcher3StringEditor.MCP@0.1.0-beta", "--yes"]
+    }
+  }
+}
+```
+
+Restart Claude Desktop after editing the file.
+
+### Running from source
+
+Before a release, or while developing, point the client at the project instead of the published
+package:
+
+```json
+{
+  "servers": {
+    "w3strings-dev": {
+      "type": "stdio",
+      "command": "dotnet",
+      "args": ["run", "--project", "Witcher3StringEditor.MCP/Witcher3StringEditor.MCP.csproj"]
+    }
+  }
+}
+```
+
+### Without the .NET 10 SDK
+
+Publish the self-contained build and point `command` at the executable instead of `dnx`:
+
+```powershell
+dotnet publish .\Witcher3StringEditor.MCP -c Release -r win-x64
+```
+
+```json
+{
+  "servers": {
+    "w3strings": {
+      "type": "stdio",
+      "command": "C:\\path\\to\\Witcher3StringEditor.MCP\\bin\\Release\\net10.0\\win-x64\\publish\\Witcher3StringEditor.MCP.exe"
+    }
+  }
+}
+```
+
+### Verify the connection
+
+After restarting the client, the server should expose **15 tools** (`open_document` …
+`list_languages`). If the client lists none, or every call fails with a generic message:
+
+- Check that `dnx` resolves: `dnx --help` must work in a terminal (otherwise install the .NET 10 SDK).
+- Check that the configured version actually exists on NuGet.org.
+- Read `log.txt` in the server's working directory — the client only shows a generic error, the real
+  exception is always in that log.
+
+## Build from source
+
+```powershell
+dotnet run --project .\Witcher3StringEditor.MCP           # run from source
+dotnet pack -c Release -r win-x64                        # build the win-x64 tool package
+```
+
+`dotnet pack` produces one platform-independent package plus one package per runtime identifier;
+all of them must be pushed to NuGet.org for `dnx` to resolve the right binary.
+
+## Notes
+
+- `.w3strings` stores no readable key name, only an 8-digit uppercase hex hash; key names are empty
+  after reopening a file.
+- `163` is written as `162`. Save with `164` for the Remastered edition, `162`/`163` for the classic
+  and next-gen builds.
+- Zero-hash key entries are dropped on save.
+- The server has no undo: save to a new file when editing game content.
+- Diagnostics are written to `log.txt` in the working directory, not to the client.
+
+## License
+
+See the [repository](https://github.com/0x7A2C9E5D/Witcher3StringEditor.MCP).

@@ -2,7 +2,9 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
   "description": "MCP server for reading and editing The Witcher 3 .w3strings localization files.",
   "name": "io.github.0x7A2C9E5D/Witcher3StringEditor.MCP",
+  "title": "Witcher 3 String Editor",
   "version": "0.1.0-beta",
+  "websiteUrl": "https://github.com/0x7A2C9E5D/Witcher3StringEditor.MCP",
   "packages": [
     {
       "registryType": "nuget",
