@@ -22,6 +22,11 @@
         <PublishAot>true</PublishAot>
         <InvariantGlobalization>true</InvariantGlobalization>
 
+        <!-- Embed the debug symbols into the executable so no separate .pdb file is produced -->
+        <DebugType>embedded</DebugType>
+        <!-- Native AOT always writes a native .pdb next to the binary; keep it out of the publish directory -->
+        <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
+
         <!-- Set recommended package metadata -->
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageId>SampleMcpServer</PackageId>
