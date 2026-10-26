@@ -14,14 +14,6 @@ internal static partial class DocumentStorage
     extension(W3StringsDocument document)
     {
         /// <summary>
-        ///     Returns the summary of the document without any of its items.
-        /// </summary>
-        private W3StringsDocumentInfo Info()
-        {
-            return new W3StringsDocumentInfo(document.Handle, document.Items.Count, document.IsDirty);
-        }
-
-        /// <summary>
         ///     Writes the document to a .w3strings file with the given language and encoding.
         /// </summary>
         private async Task WriteAsync(string filePath, W3Language language, Encoding encoding)

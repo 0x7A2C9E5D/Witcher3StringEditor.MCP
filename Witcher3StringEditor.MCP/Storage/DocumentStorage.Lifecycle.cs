@@ -1,5 +1,4 @@
 using System.Text;
-using Witcher3StringEditor.MCP.Models;
 using Witcher3StringEditor.Serializers;
 using W3StringsDocument = Witcher3StringEditor.MCP.Models.W3StringsDocument;
 
@@ -16,21 +15,21 @@ internal static partial class DocumentStorage
         /// <summary>
         ///     Opens an existing W3Strings file, or returns the handle of the already open document for that path.
         /// </summary>
-        public static async Task<W3StringsDocumentInfo> OpenAsync(string filePath)
+        public static async Task<Guid> OpenAsync(string filePath)
         {
             var fullPath = Path.GetFullPath(filePath);
 
             await Gate.WaitAsync().ConfigureAwait(false);
             try
             {
-                if (HandlesByPath.TryGetValue(fullPath, out var opened)) return Documents[opened].Info();
+                if (HandlesByPath.TryGetValue(fullPath, out var opened)) return opened;
 
                 var document = await LoadAsync(fullPath).ConfigureAwait(false);
 
                 Documents[document.Handle] = document;
                 HandlesByPath[fullPath] = document.Handle;
                 PathsByHandle[document.Handle] = fullPath;
-                return document.Info();
+                return document.Handle;
             }
             finally
             {
@@ -42,7 +41,7 @@ internal static partial class DocumentStorage
         ///     Creates an empty document that is only held in memory until it is saved. The version and language
         ///     are chosen when the document is saved.
         /// </summary>
-        public static async Task<W3StringsDocumentInfo> CreateAsync()
+        public static async Task<Guid> CreateAsync()
         {
             await Gate.WaitAsync().ConfigureAwait(false);
             try
@@ -54,7 +53,7 @@ internal static partial class DocumentStorage
                 };
 
                 Documents[document.Handle] = document;
-                return document.Info();
+                return document.Handle;
             }
             finally
             {
@@ -63,19 +62,11 @@ internal static partial class DocumentStorage
         }
 
         /// <summary>
-        ///     Returns the summary of the document without any of its items.
-        /// </summary>
-        public static Task<W3StringsDocumentInfo> GetInfoAsync(Guid handle)
-        {
-            return ExecuteAsync(handle, document => document.Info());
-        }
-
-        /// <summary>
         ///     Writes the document to disk, optionally to a different path, with the given language and container
         ///     version. Versions 162 and 163 write UTF-16LE, version 164 writes UTF-8; a version is always
         ///     required because the document does not keep one.
         /// </summary>
-        public static async Task<W3StringsDocumentInfo> SaveAsync(
+        public static async Task SaveAsync(
             Guid handle, string? filePath, string languageCode, string version)
         {
             var language = ResolveLanguage(languageCode);
@@ -85,7 +76,7 @@ internal static partial class DocumentStorage
             try
             {
                 var document = Find(handle);
-                return await SaveCoreAsync(document, filePath, language, encoding).ConfigureAwait(false);
+                await SaveCoreAsync(document, filePath, language, encoding).ConfigureAwait(false);
             }
             finally
             {
@@ -189,7 +180,7 @@ internal static partial class DocumentStorage
     /// <summary>
     ///     Writes a document to disk. The caller must hold the gate.
     /// </summary>
-    private static async Task<W3StringsDocumentInfo> SaveCoreAsync(
+    private static async Task SaveCoreAsync(
         W3StringsDocument document, string? filePath, W3Language language, Encoding encoding)
     {
         var targetPath = string.IsNullOrWhiteSpace(filePath)
@@ -213,6 +204,5 @@ internal static partial class DocumentStorage
         HandlesByPath[targetPath] = document.Handle;
 
         document.IsDirty = false;
-        return document.Info();
     }
 }

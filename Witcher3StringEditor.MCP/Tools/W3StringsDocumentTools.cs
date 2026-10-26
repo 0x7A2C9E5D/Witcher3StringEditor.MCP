@@ -17,7 +17,7 @@ internal sealed class W3StringsDocumentTools
 {
     [McpServerTool(Name = "open_document", ReadOnly = true)]
     [Description("Opens an existing .w3strings file and returns a document handle used by the document tools.")]
-    public static Task<W3StringsDocumentInfo> OpenDocument(
+    public static Task<Guid> OpenDocument(
         [Description("Path to the .w3strings file to open.")]
         string filePath)
     {
@@ -27,19 +27,28 @@ internal sealed class W3StringsDocumentTools
     [McpServerTool(Name = "create_document")]
     [Description(
         "Creates a new empty document held in memory and returns a document handle. The version and language are chosen by save_document when the document is written to disk.")]
-    public static Task<W3StringsDocumentInfo> CreateDocument()
+    public static Task<Guid> CreateDocument()
     {
         return W3StringsDocument.CreateAsync();
     }
 
-    [McpServerTool(Name = "get_info", ReadOnly = true)]
-    [Description(
-        "Returns the summary of an open document without any of its items: handle, item count and dirty flag.")]
-    public static Task<W3StringsDocumentInfo> GetInfo(
+    [McpServerTool(Name = "count", ReadOnly = true)]
+    [Description("Returns the number of string items in the document.")]
+    public static Task<int> Count(
         [Description("Document handle returned by open_document or create_document.")]
         Guid handle)
     {
-        return W3StringsDocument.GetInfoAsync(handle);
+        return W3StringsDocument.ExecuteAsync(handle, document => document.Items.Count);
+    }
+
+    [McpServerTool(Name = "is_dirty", ReadOnly = true)]
+    [Description(
+        "Returns whether the document has unsaved changes: true after any item change or a new document, false after save_document.")]
+    public static Task<bool> IsDirty(
+        [Description("Document handle returned by open_document or create_document.")]
+        Guid handle)
+    {
+        return W3StringsDocument.ExecuteAsync(handle, document => document.IsDirty);
     }
 
     [McpServerTool(Name = "navigate", ReadOnly = true)]
@@ -155,7 +164,7 @@ internal sealed class W3StringsDocumentTools
     [McpServerTool(Name = "save_document", Destructive = true)]
     [Description(
         "Writes the document to disk, overwriting the target file. The version is always required; the path is required for a document that was never saved; language and version are the values written to the file.")]
-    public static Task<W3StringsDocumentInfo> SaveDocument(
+    public static Task SaveDocument(
         [Description("Document handle returned by open_document or create_document.")]
         Guid handle,
         [Description(
