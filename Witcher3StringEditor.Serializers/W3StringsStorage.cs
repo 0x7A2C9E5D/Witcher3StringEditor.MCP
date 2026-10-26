@@ -1,5 +1,4 @@
 using System.Text;
-using Serilog;
 
 namespace Witcher3StringEditor.Serializers;
 
@@ -466,15 +465,7 @@ internal sealed class W3StringsStorage
         // The buffer ends where the language key begins, or, failing that, the reading the version asks
         // for does not fit the file at all and the other one does.
         var isStoredAsUtf8 = asUtf8 == key2Offset || (asDeclared > key2Offset && asUtf8 <= key2Offset);
-        if (!isStoredAsUtf8) return OlderGeneration(version);
-
-        Log.Warning(
-            "The container declares version {Declared}, which counts its texts in characters of two bytes, " +
-            "but its string buffer only ends where the language key begins when it is counted in bytes: its " +
-            "texts are stored as UTF-8, so the container is read as version {Stored} instead of the version " +
-            "it declares",
-            version, FirstUtf8Version);
-        return FirstUtf8Version;
+        return !isStoredAsUtf8 ? OlderGeneration(version) : FirstUtf8Version;
     }
 
     /// <summary>
@@ -488,13 +479,7 @@ internal sealed class W3StringsStorage
     /// </remarks>
     private static uint OlderGeneration(uint version)
     {
-        if (version == Utf16LeVersion) return version;
-
-        Log.Warning(
-            "The container declares version {Declared}, which is read as version {Stored}: the older " +
-            "generation of the game has one layout",
-            version, Utf16LeVersion);
-        return Utf16LeVersion;
+        return version == Utf16LeVersion ? version : Utf16LeVersion;
     }
 
     /// <summary>
@@ -522,12 +507,7 @@ internal sealed class W3StringsStorage
             throw new W3StringsException(
                 $"string buffer overruns file ({start + units * unit} > {key2Offset})");
 
-        var held = (uint)(Math.Max(0, key2Offset - start) / unit); // How many units of the buffer the file has
-        Log.Warning(
-            "The container declares a string buffer of {Declared} unit(s), of which the file holds {HeldUnits}: " +
-            "the buffer is read up to the end of the file",
-            units, held);
-        return held;
+        return (uint)(Math.Max(0, key2Offset - start) / unit);
     }
 
     /// <summary>
@@ -556,12 +536,7 @@ internal sealed class W3StringsStorage
                 $"string entry #{outside} points outside the string buffer " +
                 $"(offset {entries[outside].Offset}, length {entries[outside].Length}, buffer {units} unit(s))");
 
-        var kept = entries.Where(entry => (long)entry.Offset + entry.Length <= units).ToList();
-        Log.Warning(
-            "{Dropped} of {Declared} string entries reach past the {Units} unit(s) of string buffer the file " +
-            "holds: they are dropped",
-            entries.Count - kept.Count, entries.Count, units);
-        return kept;
+        return [.. entries.Where(entry => (long)entry.Offset + entry.Length <= units)];
     }
 
     /// <summary>

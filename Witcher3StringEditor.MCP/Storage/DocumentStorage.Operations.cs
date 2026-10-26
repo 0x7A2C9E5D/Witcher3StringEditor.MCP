@@ -18,7 +18,7 @@ internal static partial class DocumentStorage
         /// </summary>
         private async Task WriteAsync(string filePath, W3Language language, Encoding encoding)
         {
-            var serializedDocument = new Witcher3StringEditor.Serializers.W3StringsDocument
+            var serializedDocument = new Serializers.W3StringsDocument
             {
                 Items = document.Items,
                 Language = language,

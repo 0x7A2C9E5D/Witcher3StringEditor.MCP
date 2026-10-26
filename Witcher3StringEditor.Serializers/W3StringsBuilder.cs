@@ -1,5 +1,4 @@
 using System.Globalization;
-using Serilog;
 
 namespace Witcher3StringEditor.Serializers;
 
@@ -32,14 +31,9 @@ internal static class W3StringsBuilder
     /// <returns>True if the item is valid.</returns>
     private static bool ProcessItem(StringItem item, W3StringsFile file)
     {
-        if (uint.TryParse(item.StrId, out var id))
-        {
-            ResolveKeyAndAddEntry(file, id, item);
-            return true;
-        }
-
-        Log.Error("String ID {StringId} is not a 32-bit unsigned integer", item.StrId);
-        return false;
+        if (!uint.TryParse(item.StrId, out var id)) return false;
+        ResolveKeyAndAddEntry(file, id, item);
+        return true;
     }
 
     /// <summary>
@@ -130,9 +124,7 @@ internal static class W3StringsBuilder
     /// <returns>True when two items share a string id.</returns>
     private static bool HasDuplicateStrIds(IReadOnlyList<StringItem> items)
     {
-        if (items.DistinctBy(x => x.StrId).Count() >= items.Count) return false;
-        Log.Error("The container has multiple items with the same string id");
-        return true;
+        return items.DistinctBy(x => x.StrId).Count() < items.Count;
     }
 
     /// <summary>
@@ -154,28 +146,7 @@ internal static class W3StringsBuilder
     private static void ResolveKeyFromName(StringItem item)
     {
         var named = LocalizationKeyHash.Of(item.KeyName);
-        WarnIfPreExistingKeyHashInconsistent(item, named.Hash);
         SetKeyHexFromHash(item, named.Hash);
-    }
-
-    /// <summary>
-    ///     Warns when an item carries both a key name and an inconsistent key hash.
-    /// </summary>
-    /// <param name="item">The item to check.</param>
-    /// <param name="named">The hash of the key name.</param>
-    private static void WarnIfPreExistingKeyHashInconsistent(StringItem item, uint named)
-    {
-        if (!string.IsNullOrWhiteSpace(item.KeyHex)) WarnIfKeyHashInconsistent(item, named);
-    }
-
-    /// <summary>
-    ///     Warns that the carried key hash does not match the hash of the key name.
-    /// </summary>
-    /// <param name="item">The item to check.</param>
-    /// <param name="named">The hash of the key name.</param>
-    private static void WarnIfKeyHashInconsistent(StringItem item, uint named)
-    {
-        LogInconsistentKeyHash(item, named, GetCarriedKeyHash(item));
     }
 
     /// <summary>
@@ -200,20 +171,6 @@ internal static class W3StringsBuilder
     }
 
     /// <summary>
-    ///     Logs a warning when an item carries a key hash that disagrees with its key name.
-    /// </summary>
-    /// <param name="item">The item to check.</param>
-    /// <param name="named">The hash of the key name.</param>
-    /// <param name="carried">The key hash the item carries, or null when none is carried.</param>
-    private static void LogInconsistentKeyHash(StringItem item, uint named, uint? carried)
-    {
-        if (carried != 0 && carried != named)
-            Log.Warning(
-                "String ID {StringId} carries the key hash {KeyHash}, but its key name {KeyName} hashes to 0x{Named:X8}, so the name is the key it is written with",
-                item.StrId, item.KeyHex, item.KeyName, named);
-    }
-
-    /// <summary>
     ///     Resolves the key of an item from the hash it carries.
     /// </summary>
     /// <param name="item">The item to resolve the key for.</param>
@@ -231,9 +188,6 @@ internal static class W3StringsBuilder
             return;
         }
 
-        Log.Warning(
-            "String ID {StringId} carries the key hash {KeyHash}, which is not a 32-bit hexadecimal number, so it is not the key the item is written with",
-            item.StrId, item.KeyHex);
         item.KeyHex = string.Empty;
     }
 

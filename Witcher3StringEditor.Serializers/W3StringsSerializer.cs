@@ -1,5 +1,4 @@
 using System.Text;
-using Serilog;
 
 namespace Witcher3StringEditor.Serializers;
 
@@ -37,9 +36,8 @@ public static class W3StringsSerializer
             await W3StringsStorage.Of(container, version).WriteAsync(stream);
             return (true, stream);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Log.Error(ex, "An error occurred while serializing W3Strings");
             return (false, null);
         }
     }
@@ -64,9 +62,6 @@ public static class W3StringsSerializer
         using var stream = File.OpenRead(filePath);
         var storage = W3StringsStorage.Read(stream);
         var container = storage.ToContainer(stream);
-        Log.Information("Read W3Strings v{Version} container (magic {Magic}) from {Path}", storage.Version,
-            container.Magic == 0 ? "none" : $"0x{container.Magic:X8}",
-            filePath);
         return new W3StringsDocument
         {
             Items = W3StringsItemReader.Read(container),

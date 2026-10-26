@@ -57,7 +57,8 @@ internal sealed class W3StringsDocumentTools
     public static Task<StringItem?> Navigate(
         [Description("Document handle returned by open_document or create_document.")]
         Guid handle,
-        [Description("Number of items to move. 0 returns the reference item, positive moves forward, negative moves backward.")]
+        [Description(
+            "Number of items to move. 0 returns the reference item, positive moves forward, negative moves backward.")]
         int offset,
         [Description(
             "32-bit unsigned decimal string id of the reference item. Omit it to start from the first item.")]

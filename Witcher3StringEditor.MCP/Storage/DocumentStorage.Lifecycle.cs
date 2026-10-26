@@ -104,7 +104,7 @@ internal static partial class DocumentStorage
                     var existing = await W3StringsSerializer.Deserialize(path).ConfigureAwait(false);
 
                     await SaveCoreAsync(
-                        document, path, existing.Language ?? W3Language.Default, existing.Encoding)
+                            document, path, existing.Language ?? W3Language.Default, existing.Encoding)
                         .ConfigureAwait(false);
                 }
 
