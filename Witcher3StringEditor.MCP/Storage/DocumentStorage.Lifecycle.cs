@@ -25,7 +25,7 @@ internal static partial class DocumentStorage
             {
                 if (HandlesByPath.TryGetValue(fullPath, out var opened)) return Documents[opened].Info();
 
-                var document = await LoadAsync(fullPath, NextHandle()).ConfigureAwait(false);
+                var document = await LoadAsync(fullPath, Guid.NewGuid()).ConfigureAwait(false);
 
                 Documents[document.Handle] = document;
                 HandlesByPath[fullPath] = document.Handle;
@@ -53,7 +53,7 @@ internal static partial class DocumentStorage
             {
                 var document = new W3StringsDocument
                 {
-                    Handle = NextHandle(),
+                    Handle = Guid.NewGuid(),
                     Encoding = encoding,
                     Dirty = true
                 };
@@ -70,7 +70,7 @@ internal static partial class DocumentStorage
         /// <summary>
         ///     Returns the summary of the document without any of its items.
         /// </summary>
-        public static Task<W3StringsDocumentInfo> GetInfoAsync(string handle)
+        public static Task<W3StringsDocumentInfo> GetInfoAsync(Guid handle)
         {
             return ExecuteAsync(handle, document => document.Info());
         }
@@ -81,7 +81,7 @@ internal static partial class DocumentStorage
         ///     version the document already uses is kept.
         /// </summary>
         public static async Task<W3StringsDocumentInfo> SaveAsync(
-            string handle, string? filePath, string languageCode, string? version)
+            Guid handle, string? filePath, string languageCode, string? version)
         {
             var language = ResolveLanguage(languageCode);
 
@@ -101,7 +101,7 @@ internal static partial class DocumentStorage
         /// <summary>
         ///     Closes the document and drops it from memory, optionally saving pending changes first.
         /// </summary>
-        public static async Task CloseAsync(string handle, bool saveBeforeClose)
+        public static async Task CloseAsync(Guid handle, bool saveBeforeClose)
         {
             await Gate.WaitAsync().ConfigureAwait(false);
             try
@@ -129,7 +129,7 @@ internal static partial class DocumentStorage
         /// <summary>
         ///     Runs a read operation against an open document while holding the gate.
         /// </summary>
-        public static Task<T> ExecuteAsync<T>(string handle, Func<W3StringsDocument, T> operation)
+        public static Task<T> ExecuteAsync<T>(Guid handle, Func<W3StringsDocument, T> operation)
         {
             return ExecuteCoreAsync(handle, operation);
         }
@@ -137,7 +137,7 @@ internal static partial class DocumentStorage
         /// <summary>
         ///     Runs a write operation against an open document while holding the gate.
         /// </summary>
-        public static Task ExecuteAsync(string handle, Action<W3StringsDocument> operation)
+        public static Task ExecuteAsync(Guid handle, Action<W3StringsDocument> operation)
         {
             return ExecuteCoreAsync(handle, operation);
         }
@@ -146,7 +146,7 @@ internal static partial class DocumentStorage
     /// <summary>
     ///     Loads a .w3strings file into an in-memory document.
     /// </summary>
-    private static async Task<W3StringsDocument> LoadAsync(string filePath, string handle)
+    private static async Task<W3StringsDocument> LoadAsync(string filePath, Guid handle)
     {
         if (!File.Exists(filePath))
             throw new FileNotFoundException($"W3Strings file not found: {filePath}", filePath);
@@ -163,7 +163,7 @@ internal static partial class DocumentStorage
         };
     }
 
-    private static async Task<T> ExecuteCoreAsync<T>(string handle, Func<W3StringsDocument, T> operation)
+    private static async Task<T> ExecuteCoreAsync<T>(Guid handle, Func<W3StringsDocument, T> operation)
     {
         await Gate.WaitAsync().ConfigureAwait(false);
         try
@@ -176,7 +176,7 @@ internal static partial class DocumentStorage
         }
     }
 
-    private static async Task ExecuteCoreAsync(string handle, Action<W3StringsDocument> operation)
+    private static async Task ExecuteCoreAsync(Guid handle, Action<W3StringsDocument> operation)
     {
         await Gate.WaitAsync().ConfigureAwait(false);
         try

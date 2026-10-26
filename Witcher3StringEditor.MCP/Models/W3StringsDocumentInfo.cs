@@ -4,6 +4,6 @@ namespace Witcher3StringEditor.MCP.Models;
 ///     Summary of an open document.
 /// </summary>
 internal sealed record W3StringsDocumentInfo(
-    string Handle,
+    Guid Handle,
     int ItemCount,
     bool IsDirty);

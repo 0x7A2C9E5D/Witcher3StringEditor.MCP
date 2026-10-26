@@ -9,7 +9,7 @@ namespace Witcher3StringEditor.MCP.Models;
 /// </summary>
 internal sealed class W3StringsDocument
 {
-    public required string Handle { get; init; }
+    public required Guid Handle { get; init; }
 
     public string? FilePath { get; set; }
 

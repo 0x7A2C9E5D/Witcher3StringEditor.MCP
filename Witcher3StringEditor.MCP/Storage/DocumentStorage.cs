@@ -15,9 +15,8 @@ internal static partial class DocumentStorage
     internal const int DefaultPageSize = 50;
 
     private static readonly SemaphoreSlim Gate = new(1, 1);
-    private static readonly Dictionary<string, W3StringsDocument> Documents = new(StringComparer.Ordinal);
-    private static readonly Dictionary<string, string> HandlesByPath = new(StringComparer.OrdinalIgnoreCase);
-    private static long _nextHandle;
+    private static readonly Dictionary<Guid, W3StringsDocument> Documents = [];
+    private static readonly Dictionary<string, Guid> HandlesByPath = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     ///     Resolves the language of a .w3strings file from its user facing name.
@@ -54,14 +53,12 @@ internal static partial class DocumentStorage
     /// <summary>
     ///     Gets an open document or throws when the handle is unknown.
     /// </summary>
-    private static W3StringsDocument Find(string handle)
+    private static W3StringsDocument Find(Guid handle)
     {
         return Documents.TryGetValue(handle, out var document)
             ? document
             : throw new KeyNotFoundException($"Unknown document handle: {handle}");
     }
-
-    private static string NextHandle() => $"w3doc-{++_nextHandle}";
 
     /// <summary>
     ///     Validates the paging arguments before the items are read.

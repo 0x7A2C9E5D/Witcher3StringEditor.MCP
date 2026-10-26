@@ -6,7 +6,7 @@ namespace Witcher3StringEditor.MCP.Models;
 ///     One page of the items of a document.
 /// </summary>
 internal sealed record W3StringsItemPage(
-    string Handle,
+    Guid Handle,
     int ItemCount,
     int Offset,
     int Limit,

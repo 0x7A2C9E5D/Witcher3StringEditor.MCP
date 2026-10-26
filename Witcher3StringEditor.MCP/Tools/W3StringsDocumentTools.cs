@@ -40,7 +40,7 @@ internal sealed class W3StringsDocumentTools
         "Returns the summary of an open document without any of its items: handle, item count and dirty flag.")]
     public static Task<W3StringsDocumentInfo> GetInfo(
         [Description("Document handle returned by open_document or create_document.")]
-        string handle)
+        Guid handle)
     {
         return W3StringsDocument.GetInfoAsync(handle);
     }
@@ -50,7 +50,7 @@ internal sealed class W3StringsDocumentTools
         "Returns one page of the string items of the document, starting at offset. Use itemCount to get the total and hasMore to check for another page.")]
     public static Task<W3StringsItemPage> ListItems(
         [Description("Document handle returned by open_document or create_document.")]
-        string handle,
+        Guid handle,
         [Description("Zero based index of the first item to return. Defaults to 0.")]
         int offset = 0,
         [Description("Maximum number of items to return. Defaults to 50.")]
@@ -63,7 +63,7 @@ internal sealed class W3StringsDocumentTools
     [Description("Returns the string item with the given 32-bit unsigned string id.")]
     public static Task<StringItem> GetItem(
         [Description("Document handle returned by open_document or create_document.")]
-        string handle,
+        Guid handle,
         [Description("32-bit unsigned string id of the item, in decimal.")]
         string strId)
     {
@@ -75,7 +75,7 @@ internal sealed class W3StringsDocumentTools
         "Searches the string items of the document by substring in their string id, text or key name and returns one page of matches. Use matchCount to get the total and hasMore to check for another page.")]
     public static Task<W3StringsSearchResult> SearchItems(
         [Description("Document handle returned by open_document or create_document.")]
-        string handle,
+        Guid handle,
         [Description("Substring to search for. It is matched against the string id, text and key name of every item.")]
         string query,
         [Description("Match case sensitively. Defaults to false.")]
@@ -93,7 +93,7 @@ internal sealed class W3StringsDocumentTools
     [Description("Adds a string item to the document without writing to disk.")]
     public static Task AddItem(
         [Description("Document handle returned by open_document or create_document.")]
-        string handle,
+        Guid handle,
         [Description(
             "Item to add. strId is a 32-bit unsigned decimal id; text is the string; keyName and keyHex are optional.")]
         StringItem item)
@@ -106,7 +106,7 @@ internal sealed class W3StringsDocumentTools
         "Updates the text or key of an existing string item without writing to disk. Omit an argument to keep its value, pass an empty string to clear it.")]
     public static Task UpdateItem(
         [Description("Document handle returned by open_document or create_document.")]
-        string handle,
+        Guid handle,
         [Description("32-bit unsigned decimal string id of the item to update.")]
         string strId,
         [Description("New text. Omit to keep the current text, pass an empty string to clear it.")]
@@ -124,7 +124,7 @@ internal sealed class W3StringsDocumentTools
     [Description("Changes the 32-bit unsigned string id of an item without writing to disk.")]
     public static Task UpdateItemId(
         [Description("Document handle returned by open_document or create_document.")]
-        string handle,
+        Guid handle,
         [Description("Current 32-bit unsigned decimal string id of the item.")]
         string strId,
         [Description("New 32-bit unsigned decimal string id. It must not be used by another item.")]
@@ -138,7 +138,7 @@ internal sealed class W3StringsDocumentTools
         "Changes the readable key name of an item and clears its key hash, which is recalculated when the document is saved.")]
     public static Task UpdateItemKeyName(
         [Description("Document handle returned by open_document or create_document.")]
-        string handle,
+        Guid handle,
         [Description("32-bit unsigned decimal string id of the item.")]
         string strId,
         [Description("New readable key name. Pass an empty string to clear the name.")]
@@ -151,7 +151,7 @@ internal sealed class W3StringsDocumentTools
     [Description("Removes a string item from the document without writing to disk.")]
     public static Task DeleteItem(
         [Description("Document handle returned by open_document or create_document.")]
-        string handle,
+        Guid handle,
         [Description("32-bit unsigned decimal string id of the item to delete.")]
         string strId)
     {
@@ -163,7 +163,7 @@ internal sealed class W3StringsDocumentTools
         "Writes the document to disk, overwriting the target file. The path is required for a document that was created without one; language and version are the values written to the file.")]
     public static Task<W3StringsDocumentInfo> SaveDocument(
         [Description("Document handle returned by open_document or create_document.")]
-        string handle,
+        Guid handle,
         [Description(
             "Path to write to. Defaults to the path the document was opened from; required when the document was created.")]
         string? filePath = null,
@@ -182,7 +182,7 @@ internal sealed class W3StringsDocumentTools
         "Closes the document and releases the handle. Unsaved changes are discarded unless saveBeforeClose is true.")]
     public static Task CloseDocument(
         [Description("Document handle returned by open_document or create_document.")]
-        string handle,
+        Guid handle,
         [Description("Save pending changes before closing. Defaults to false.")]
         bool saveBeforeClose = false)
     {

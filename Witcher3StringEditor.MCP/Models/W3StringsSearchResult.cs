@@ -6,7 +6,7 @@ namespace Witcher3StringEditor.MCP.Models;
 ///     Result of searching the items of a document, one page at a time.
 /// </summary>
 internal sealed record W3StringsSearchResult(
-    string Handle,
+    Guid Handle,
     string Query,
     bool CaseSensitive,
     int MatchCount,
