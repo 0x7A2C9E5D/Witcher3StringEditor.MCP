@@ -26,15 +26,18 @@ internal sealed class W3StringsDocumentTools
 
     [McpServerTool(Name = "create_document")]
     [Description(
-        "Creates a new empty document held in memory and returns a document handle. Pass a path, language and encoding to save_document when writing it to disk.")]
-    public static Task<W3StringsDocumentInfo> CreateDocument()
+        "Creates a new empty document held in memory and returns a document handle. The version fixes the encoding; pass a path and language to save_document when writing it to disk.")]
+    public static Task<W3StringsDocumentInfo> CreateDocument(
+        [Description(
+            "W3Strings container version, which decides the encoding: 162 or 163 use UTF-16LE (classic and next-gen editions), 164 uses UTF-8 (remastered edition). Versions are tied to the game edition and must not be mixed; 162 and 163 are written as 162.")]
+        string version)
     {
-        return W3StringsDocument.CreateAsync();
+        return W3StringsDocument.CreateAsync(version);
     }
 
     [McpServerTool(Name = "get_info", ReadOnly = true)]
     [Description(
-        "Returns the summary of an open document without any of its items: handle, file path, language, encoding, item count and dirty flag.")]
+        "Returns the summary of an open document without any of its items: handle, item count and dirty flag.")]
     public static Task<W3StringsDocumentInfo> GetInfo(
         [Description("Document handle returned by open_document or create_document.")]
         string handle)
@@ -157,7 +160,7 @@ internal sealed class W3StringsDocumentTools
 
     [McpServerTool(Name = "save_document", Destructive = true)]
     [Description(
-        "Writes the document to disk, overwriting the target file. The path is required for a document that was created without one; language and encoding are the values written to the file.")]
+        "Writes the document to disk, overwriting the target file. The path is required for a document that was created without one; language and version are the values written to the file.")]
     public static Task<W3StringsDocumentInfo> SaveDocument(
         [Description("Document handle returned by open_document or create_document.")]
         string handle,
@@ -168,10 +171,10 @@ internal sealed class W3StringsDocumentTools
             "Language code or culture code to write the document for, for example en, cn or zh-Hans. Defaults to en.")]
         string language = "en",
         [Description(
-            "Encoding to write the document with: utf-8 (version 164) or utf-16le (version 162). Defaults to utf-8.")]
-        string encoding = "utf-8")
+            "W3Strings container version, which decides the encoding: 162 or 163 use UTF-16LE (classic and next-gen editions), 164 uses UTF-8 (remastered edition). Defaults to the version the document was opened or created with; passing a different version converts the file.")]
+        string? version = null)
     {
-        return W3StringsDocument.SaveAsync(handle, filePath, language, encoding);
+        return W3StringsDocument.SaveAsync(handle, filePath, language, version);
     }
 
     [McpServerTool(Name = "close_document")]

@@ -20,13 +20,8 @@ internal static partial class DocumentStorage
     private static long _nextHandle;
 
     /// <summary>
-    ///     Resolves the language and encoding of a .w3strings file from their user facing names.
+    ///     Resolves the language of a .w3strings file from its user facing name.
     /// </summary>
-    private static (W3Language Language, Encoding Encoding) Resolve(string? languageCode, string? encodingName)
-    {
-        return (ResolveLanguage(languageCode), ResolveEncoding(encodingName));
-    }
-
     private static W3Language ResolveLanguage(string? code)
     {
         var language = W3Language.FromCode(code ?? "en");
@@ -36,15 +31,23 @@ internal static partial class DocumentStorage
             nameof(code));
     }
 
-    private static Encoding ResolveEncoding(string? name)
+    /// <summary>
+    ///     Resolves the encoding from the W3Strings container version. Versions 162 and 163 are the UTF-16LE
+    ///     generation used by the classic and next-gen editions (both are written as 162); version 164 is the
+    ///     UTF-8 generation used by the remastered edition. Returns null when no version is given so callers can
+    ///     keep the version the document already uses.
+    /// </summary>
+    private static Encoding? ResolveVersion(string? version)
     {
-        return name?.Trim().ToLowerInvariant() switch
+        if (string.IsNullOrWhiteSpace(version)) return null;
+
+        return version.Trim().ToLowerInvariant() switch
         {
-            null or "" or "utf-8" or "utf8" => Encoding.UTF8,
-            "utf-16le" or "utf16le" or "utf-16" or "utf16" or "unicode" => Encoding.Unicode,
+            "162" or "v162" or "163" or "v163" => Encoding.Unicode,
+            "164" or "v164" => Encoding.UTF8,
             _ => throw new ArgumentException(
-                $"Unknown encoding: {name}. Supported encodings: utf-8, utf-16le.",
-                nameof(name))
+                $"Unknown version: {version}. Supported versions: 162 and 163 (UTF-16LE), 164 (UTF-8).",
+                nameof(version))
         };
     }
 

@@ -18,17 +18,7 @@ internal static partial class DocumentStorage
         /// </summary>
         private W3StringsDocumentInfo Info()
         {
-            var encodingName = document.Encoding is null
-                ? null
-                : document.Encoding.Equals(Encoding.UTF8) ? "utf-8" : "utf-16le";
-
-            return new W3StringsDocumentInfo(
-                document.Handle,
-                document.FilePath,
-                document.Language?.Code,
-                encodingName,
-                document.Items.Count,
-                document.Dirty);
+            return new W3StringsDocumentInfo(document.Handle, document.Items.Count, document.Dirty);
         }
 
         /// <summary>

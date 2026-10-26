@@ -38,16 +38,23 @@ internal static partial class DocumentStorage
         }
 
         /// <summary>
-        ///     Creates an empty document that is only held in memory until it is saved.
+        ///     Creates an empty document that is only held in memory until it is saved. The version decides the
+        ///     encoding of the document: 162 and 163 are UTF-16LE, 164 is UTF-8.
         /// </summary>
-        public static async Task<W3StringsDocumentInfo> CreateAsync()
+        public static async Task<W3StringsDocumentInfo> CreateAsync(string version)
         {
+            var encoding = ResolveVersion(version) ??
+                           throw new ArgumentException(
+                               "A version is required to create a document: 162 or 163 (UTF-16LE), 164 (UTF-8).",
+                               nameof(version));
+
             await Gate.WaitAsync().ConfigureAwait(false);
             try
             {
                 var document = new W3StringsDocument
                 {
                     Handle = NextHandle(),
+                    Encoding = encoding,
                     Dirty = true
                 };
 
@@ -69,17 +76,21 @@ internal static partial class DocumentStorage
         }
 
         /// <summary>
-        ///     Writes the document to disk, optionally to a different path, with the given language and encoding.
+        ///     Writes the document to disk, optionally to a different path, with the given language and container
+        ///     version. Versions 162 and 163 write UTF-16LE, version 164 writes UTF-8; when no version is given the
+        ///     version the document already uses is kept.
         /// </summary>
         public static async Task<W3StringsDocumentInfo> SaveAsync(
-            string handle, string? filePath, string languageCode, string encodingName)
+            string handle, string? filePath, string languageCode, string? version)
         {
-            var (language, encoding) = Resolve(languageCode, encodingName);
+            var language = ResolveLanguage(languageCode);
 
             await Gate.WaitAsync().ConfigureAwait(false);
             try
             {
-                return await SaveCoreAsync(Find(handle), filePath, language, encoding).ConfigureAwait(false);
+                var document = Find(handle);
+                var encoding = ResolveVersion(version) ?? document.Encoding ?? Encoding.UTF8;
+                return await SaveCoreAsync(document, filePath, language, encoding).ConfigureAwait(false);
             }
             finally
             {
