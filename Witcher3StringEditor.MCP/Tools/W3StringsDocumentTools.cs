@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using JetBrains.Annotations;
 using ModelContextProtocol.Server;
+using Serilog;
 using Witcher3StringEditor.MCP.Models;
 using Witcher3StringEditor.MCP.Storage;
 using Witcher3StringEditor.Serializers;
@@ -17,19 +18,23 @@ internal sealed class W3StringsDocumentTools
 {
     [McpServerTool(Name = "open_document", ReadOnly = true)]
     [Description("Opens an existing .w3strings file and returns a document handle used by the document tools.")]
-    public static Task<Guid> OpenDocument(
+    public static async Task<Guid> OpenDocument(
         [Description("Path to the .w3strings file to open.")]
         string filePath)
     {
-        return W3StringsDocument.OpenAsync(filePath);
+        var handle = await W3StringsDocument.OpenAsync(filePath).ConfigureAwait(false);
+        Log.Information("Opened {File} as document {Handle}", filePath, handle);
+        return handle;
     }
 
     [McpServerTool(Name = "create_document")]
     [Description(
         "Creates a new empty document held in memory and returns a document handle. The version and language are chosen by save_document when the document is written to disk.")]
-    public static Task<Guid> CreateDocument()
+    public static async Task<Guid> CreateDocument()
     {
-        return W3StringsDocument.CreateAsync();
+        var handle = await W3StringsDocument.CreateAsync().ConfigureAwait(false);
+        Log.Information("Created document {Handle}", handle);
+        return handle;
     }
 
     [McpServerTool(Name = "count", ReadOnly = true)]
@@ -95,20 +100,21 @@ internal sealed class W3StringsDocumentTools
 
     [McpServerTool(Name = "add_item")]
     [Description("Adds a string item to the document without writing to disk.")]
-    public static Task AddItem(
+    public static async Task AddItem(
         [Description("Document handle returned by open_document or create_document.")]
         Guid handle,
         [Description(
             "Item to add. strId is a 32-bit unsigned decimal id; text is the string; keyName and keyHex are optional.")]
         StringItem item)
     {
-        return W3StringsDocument.ExecuteAsync(handle, document => document.AddItem(item));
+        await W3StringsDocument.ExecuteAsync(handle, document => document.AddItem(item)).ConfigureAwait(false);
+        Log.Debug("Added item {StrId} to document {Handle}", item.StrId, handle);
     }
 
     [McpServerTool(Name = "update_item")]
     [Description(
         "Updates the text or key of an existing string item without writing to disk. Omit an argument to keep its value, pass an empty string to clear it.")]
-    public static Task UpdateItem(
+    public static async Task UpdateItem(
         [Description("Document handle returned by open_document or create_document.")]
         Guid handle,
         [Description("32-bit unsigned decimal string id of the item to update.")]
@@ -121,12 +127,14 @@ internal sealed class W3StringsDocumentTools
             "New 32-bit hexadecimal key hash. Omit to keep the current hash, pass an empty string to clear it.")]
         string? keyHex = null)
     {
-        return W3StringsDocument.ExecuteAsync(handle, document => document.UpdateItem(strId, text, keyName, keyHex));
+        await W3StringsDocument.ExecuteAsync(handle, document => document.UpdateItem(strId, text, keyName, keyHex))
+            .ConfigureAwait(false);
+        Log.Debug("Updated item {StrId} of document {Handle}", strId, handle);
     }
 
     [McpServerTool(Name = "update_item_id")]
     [Description("Changes the 32-bit unsigned string id of an item without writing to disk.")]
-    public static Task UpdateItemId(
+    public static async Task UpdateItemId(
         [Description("Document handle returned by open_document or create_document.")]
         Guid handle,
         [Description("Current 32-bit unsigned decimal string id of the item.")]
@@ -134,13 +142,15 @@ internal sealed class W3StringsDocumentTools
         [Description("New 32-bit unsigned decimal string id. It must not be used by another item.")]
         string newStrId)
     {
-        return W3StringsDocument.ExecuteAsync(handle, document => document.UpdateItemId(strId, newStrId));
+        await W3StringsDocument.ExecuteAsync(handle, document => document.UpdateItemId(strId, newStrId))
+            .ConfigureAwait(false);
+        Log.Debug("Changed item id {StrId} to {NewStrId} in document {Handle}", strId, newStrId, handle);
     }
 
     [McpServerTool(Name = "update_item_key_name")]
     [Description(
         "Changes the readable key name of an item and clears its key hash, which is recalculated when the document is saved.")]
-    public static Task UpdateItemKeyName(
+    public static async Task UpdateItemKeyName(
         [Description("Document handle returned by open_document or create_document.")]
         Guid handle,
         [Description("32-bit unsigned decimal string id of the item.")]
@@ -148,24 +158,27 @@ internal sealed class W3StringsDocumentTools
         [Description("New readable key name. Pass an empty string to clear the name.")]
         string keyName)
     {
-        return W3StringsDocument.ExecuteAsync(handle, document => document.UpdateItemKeyName(strId, keyName));
+        await W3StringsDocument.ExecuteAsync(handle, document => document.UpdateItemKeyName(strId, keyName))
+            .ConfigureAwait(false);
+        Log.Debug("Set the key name of item {StrId} in document {Handle}", strId, handle);
     }
 
     [McpServerTool(Name = "delete_item")]
     [Description("Removes a string item from the document without writing to disk.")]
-    public static Task DeleteItem(
+    public static async Task DeleteItem(
         [Description("Document handle returned by open_document or create_document.")]
         Guid handle,
         [Description("32-bit unsigned decimal string id of the item to delete.")]
         string strId)
     {
-        return W3StringsDocument.ExecuteAsync(handle, document => document.DeleteItem(strId));
+        await W3StringsDocument.ExecuteAsync(handle, document => document.DeleteItem(strId)).ConfigureAwait(false);
+        Log.Debug("Deleted item {StrId} from document {Handle}", strId, handle);
     }
 
     [McpServerTool(Name = "save_document", Destructive = true)]
     [Description(
         "Writes the document to disk, overwriting the target file, and returns true when it was written. The version is always required; the path is required for a document that was never saved; language and version are the values written to the file.")]
-    public static Task<bool> SaveDocument(
+    public static async Task<bool> SaveDocument(
         [Description("Document handle returned by open_document or create_document.")]
         Guid handle,
         [Description(
@@ -178,19 +191,27 @@ internal sealed class W3StringsDocumentTools
             "Language code or culture code to write the document for, for example en, cn or zh-Hans. Defaults to en.")]
         string language = "en")
     {
-        return W3StringsDocument.SaveAsync(handle, filePath, language, version);
+        var saved = await W3StringsDocument.SaveAsync(handle, filePath, language, version).ConfigureAwait(false);
+        if (saved)
+            Log.Information("Saved document {Handle} as version {Version} for {Language} to {File}",
+                handle, version, language, filePath);
+        else
+            Log.Warning("Saving document {Handle} as version {Version} did not report success", handle, version);
+
+        return saved;
     }
 
     [McpServerTool(Name = "close_document")]
     [Description(
         "Closes the document and releases the handle. Unsaved changes are discarded unless saveBeforeClose is true; saving before close uses the language and version already stored in the file.")]
-    public static Task CloseDocument(
+    public static async Task CloseDocument(
         [Description("Document handle returned by open_document or create_document.")]
         Guid handle,
         [Description("Save pending changes before closing. Defaults to false.")]
         bool saveBeforeClose = false)
     {
-        return W3StringsDocument.CloseAsync(handle, saveBeforeClose);
+        await W3StringsDocument.CloseAsync(handle, saveBeforeClose).ConfigureAwait(false);
+        Log.Information("Closed document {Handle} (saved before close: {SavedBeforeClose})", handle, saveBeforeClose);
     }
 
     [McpServerTool(Name = "list_languages", ReadOnly = true)]
