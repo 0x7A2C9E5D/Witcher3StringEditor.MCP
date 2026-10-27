@@ -69,10 +69,18 @@ jobs:
           path: Witcher3StringEditor.MCP/bin/Release/*.nupkg
           if-no-files-found: error
 
-  # Ubuntu runner needs the AOT toolchain; macOS and Windows runners ship with theirs.
+  # Ubuntu runners need the AOT toolchain; macOS and Windows runners ship with theirs.
+  # arm64 Linux must run on an arm64 host: AOT does not cross-compile architectures across a
+  # container/sysroot boundary, so linux-arm64 gets its own native runner instead of -r on x64.
   linux:
-    name: linux-x64
-    runs-on: ubuntu-latest
+    name: ${{ matrix.rid }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, rid: linux-x64 }
+          - { os: ubuntu-24.04-arm, rid: linux-arm64 }
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -83,18 +91,18 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
 
       - name: Pack
-        run: dotnet pack ${{ env.PROJECT }} -c Release -m:1 -r linux-x64 -p:PublishAot=true
+        run: dotnet pack ${{ env.PROJECT }} -c Release -m:1 -r ${{ matrix.rid }} -p:PublishAot=true
 
       - name: Verify the payload is really native AOT
         run: |
-          dir="Witcher3StringEditor.MCP/bin/Release/net10.0/linux-x64/publish"
+          dir="Witcher3StringEditor.MCP/bin/Release/net10.0/${{ matrix.rid }}/publish"
           ls -la "$dir"
           file "$dir/Witcher3StringEditor.MCP"
           test ! -f "$dir/Witcher3StringEditor.MCP.dll"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: rid-linux-x64
+          name: rid-${{ matrix.rid }}
           path: Witcher3StringEditor.MCP/bin/Release/*.nupkg
           if-no-files-found: error
 
@@ -159,7 +167,7 @@ jobs:
         run: |
           for f in pkgs/*.nupkg; do
             case "$f" in
-              *.win-x64.*|*.win-arm64.*|*.linux-x64.*|*.osx-arm64.*|*.any.*) ;;
+              *.win-x64.*|*.win-arm64.*|*.linux-x64.*|*.linux-arm64.*|*.osx-arm64.*|*.any.*) ;;
               *) continue ;;
             esac
             echo "pushing $f"
