@@ -33,6 +33,7 @@ jobs:
       matrix:
         include:
           - { os: windows-latest, rid: win-x64 }
+          - { os: windows-latest, rid: win-arm64 }
           - { os: macos-latest, rid: osx-arm64 }
           - { os: ubuntu-latest, rid: any }
     steps:
@@ -155,7 +156,7 @@ jobs:
         run: |
           for f in pkgs/*.nupkg; do
             case "$f" in
-              *.win-x64.*|*.linux-x64.*|*.osx-arm64.*|*.any.*) ;;
+              *.win-x64.*|*.win-arm64.*|*.linux-x64.*|*.osx-arm64.*|*.any.*) ;;
               *) continue ;;
             esac
             echo "pushing $f"

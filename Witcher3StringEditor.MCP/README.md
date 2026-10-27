@@ -39,10 +39,10 @@ downloads the package from NuGet.org.
 All configurations below launch the same stdio command:
 
 ```
-dnx Witcher3StringEditor.MCP@0.1.0-beta.2 --yes
+dnx Witcher3StringEditor.MCP@0.1.0-beta.3 --yes
 ```
 
-`--yes` skips the download confirmation prompt; `@0.1.0-beta.2` pins the version, so upgrade by
+`--yes` skips the download confirmation prompt; `@0.1.0-beta.3` pins the version, so upgrade by
 editing that number and restarting the client.
 
 ### VS Code
@@ -55,7 +55,7 @@ Create `.vscode/mcp.json` in the workspace (or run **MCP: Add Server** from the 
     "w3strings": {
       "type": "stdio",
       "command": "dnx",
-      "args": ["Witcher3StringEditor.MCP@0.1.0-beta.2", "--yes"]
+      "args": ["Witcher3StringEditor.MCP@0.1.0-beta.3", "--yes"]
     }
   }
 }
@@ -76,7 +76,7 @@ Create `.cursor/mcp.json` in the project (or `~/.cursor/mcp.json` for all projec
   "mcpServers": {
     "w3strings": {
       "command": "dnx",
-      "args": ["Witcher3StringEditor.MCP@0.1.0-beta.2", "--yes"]
+      "args": ["Witcher3StringEditor.MCP@0.1.0-beta.3", "--yes"]
     }
   }
 }
@@ -85,7 +85,7 @@ Create `.cursor/mcp.json` in the project (or `~/.cursor/mcp.json` for all projec
 ### Claude Code
 
 ```powershell
-claude mcp add w3strings -- dnx Witcher3StringEditor.MCP@0.1.0-beta.2 --yes
+claude mcp add w3strings -- dnx Witcher3StringEditor.MCP@0.1.0-beta.3 --yes
 ```
 
 ### Claude Desktop
@@ -97,7 +97,7 @@ Edit `%APPDATA%\Claude\claude_desktop_config.json` (macOS: `~/Library/Applicatio
   "mcpServers": {
     "w3strings": {
       "command": "dnx",
-      "args": ["Witcher3StringEditor.MCP@0.1.0-beta.2", "--yes"]
+      "args": ["Witcher3StringEditor.MCP@0.1.0-beta.3", "--yes"]
     }
   }
 }

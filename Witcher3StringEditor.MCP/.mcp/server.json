@@ -3,13 +3,13 @@
   "description": "MCP server for reading and editing The Witcher 3 .w3strings localization files.",
   "name": "io.github.0x7A2C9E5D/Witcher3StringEditor.MCP",
   "title": "Witcher 3 String Editor",
-  "version": "0.1.0-beta.2",
+  "version": "0.1.0-beta.3",
   "websiteUrl": "https://github.com/0x7A2C9E5D/Witcher3StringEditor.MCP",
   "packages": [
     {
       "registryType": "nuget",
       "identifier": "Witcher3StringEditor.MCP",
-      "version": "0.1.0-beta.2",
+      "version": "0.1.0-beta.3",
       "transport": {
         "type": "stdio"
       },
