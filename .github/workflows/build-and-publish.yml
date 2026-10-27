@@ -33,7 +33,10 @@ jobs:
       matrix:
         include:
           - { os: windows-latest, rid: win-x64 }
-          - { os: windows-latest, rid: win-arm64 }
+          # Native arm64 host: cross-compiling AOT needs the MSVC ARM64 linker, which windows-latest
+          # does not reliably ship (actions/runner-images#14215). Drop this line if the label is not
+          # available on the plan, and Windows Arm64 will fall back to the `any` package.
+          - { os: windows-11-arm, rid: win-arm64 }
           - { os: macos-latest, rid: osx-arm64 }
           - { os: ubuntu-latest, rid: any }
     steps:
