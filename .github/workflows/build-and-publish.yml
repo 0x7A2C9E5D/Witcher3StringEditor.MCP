@@ -1,0 +1,204 @@
+name: build-and-publish
+
+# Tag push (v*) builds all platforms and pushes to NuGet.org.
+# Manual run builds only, unless you tick the publish inputs.
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Push packages to NuGet.org
+        type: boolean
+        default: false
+      publish_registry:
+        description: Also publish server.json to the MCP Registry
+        type: boolean
+        default: false
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_VERSION: 10.0.x
+  PROJECT: Witcher3StringEditor.MCP/Witcher3StringEditor.MCP.csproj
+
+jobs:
+  # Native AOT on the OS that owns the RID, plus the framework-dependent 'any' fallback.
+  package:
+    name: ${{ matrix.rid }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, rid: win-x64 }
+          - { os: macos-latest, rid: osx-arm64 }
+          - { os: ubuntu-latest, rid: any }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Pack
+        run: >
+          dotnet pack ${{ env.PROJECT }} -c Release -m:1
+          -r ${{ matrix.rid }}
+          -p:PublishAot=${{ matrix.rid != 'any' }}
+          -p:SelfContained=${{ matrix.rid != 'any' }}
+
+      - name: Verify the payload is really native AOT
+        shell: bash
+        run: |
+          dir="Witcher3StringEditor.MCP/bin/Release/net10.0/${{ matrix.rid }}/publish"
+          ls -la "$dir"
+          if [ "${{ matrix.rid }}" = "any" ]; then
+            test -f "$dir/Witcher3StringEditor.MCP.dll"   # framework-dependent: IL assembly expected
+          else
+            test ! -f "$dir/Witcher3StringEditor.MCP.dll" # AOT: no IL assembly, only the native binary
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rid-${{ matrix.rid }}
+          path: Witcher3StringEditor.MCP/bin/Release/*.nupkg
+          if-no-files-found: error
+
+  # Ubuntu runner needs the AOT toolchain; macOS and Windows runners ship with theirs.
+  linux:
+    name: linux-x64
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install Native AOT prerequisites
+        run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+
+      - name: Pack
+        run: dotnet pack ${{ env.PROJECT }} -c Release -m:1 -r linux-x64 -p:PublishAot=true
+
+      - name: Verify the payload is really native AOT
+        run: |
+          dir="Witcher3StringEditor.MCP/bin/Release/net10.0/linux-x64/publish"
+          ls -la "$dir"
+          file "$dir/Witcher3StringEditor.MCP"
+          test ! -f "$dir/Witcher3StringEditor.MCP.dll"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rid-linux-x64
+          path: Witcher3StringEditor.MCP/bin/Release/*.nupkg
+          if-no-files-found: error
+
+  # The pointer package lists every RID above; it must be packed after them and pushed last.
+  pointer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - name: Pack
+        run: dotnet pack ${{ env.PROJECT }} -c Release -m:1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pointer
+          path: Witcher3StringEditor.MCP/bin/Release/*.nupkg
+          if-no-files-found: error
+
+  publish:
+    needs: [package, linux, pointer]
+    if: github.event_name == 'push' || inputs.publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # NuGet/login exchanges the GitHub OIDC token for a 1 hour API key
+    outputs:
+      version: ${{ steps.version.outputs.value }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: pkgs
+          merge-multiple: true
+
+      - name: Read package version
+        id: version
+        run: echo "value=$(dotnet msbuild ${{ env.PROJECT }} -getProperty:PackageVersion)" >> "$GITHUB_OUTPUT"
+
+      - name: Tag must match PackageVersion
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          test "v${{ steps.version.outputs.value }}" = "${GITHUB_REF_NAME}" \
+            || { echo "tag ${GITHUB_REF_NAME} does not match PackageVersion ${{ steps.version.outputs.value }}"; exit 1; }
+
+      # Trusted Publishing: no stored API key, the OIDC token is exchanged for a key valid for 1 hour.
+      # Request it right before pushing so it cannot expire in between.
+      - name: NuGet login (OIDC -> temporary API key)
+        id: nuget
+        uses: NuGet/login@v1
+        with:
+          user: ssc19940105 # nuget.org profile name, not the email address
+
+      # RID packages first: the pointer package resolves them by exact version at install time.
+      - name: Push RID packages
+        env:
+          NUGET_API_KEY: ${{ steps.nuget.outputs.NUGET_API_KEY }}
+        run: |
+          for f in pkgs/*.nupkg; do
+            case "$f" in
+              *.win-x64.*|*.linux-x64.*|*.osx-arm64.*|*.any.*) ;;
+              *) continue ;;
+            esac
+            echo "pushing $f"
+            dotnet nuget push "$f" --api-key "$NUGET_API_KEY" \
+              --source https://api.nuget.org/v3/index.json --skip-duplicate
+          done
+
+      - name: Push pointer package
+        env:
+          NUGET_API_KEY: ${{ steps.nuget.outputs.NUGET_API_KEY }}
+        run: |
+          dotnet nuget push "pkgs/Witcher3StringEditor.MCP.${{ steps.version.outputs.value }}.nupkg" \
+            --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+  registry:
+    needs: publish
+    if: github.event_name == 'push' || inputs.publish_registry
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # mcp-publisher login github-oidc
+    steps:
+      - uses: actions/checkout@v4
+
+      # The registry reads the README out of the NuGet package, which is not available immediately.
+      - name: Wait for the package README
+        env:
+          VERSION: ${{ needs.publish.outputs.version }}
+        run: |
+          url="https://api.nuget.org/v3-flatcontainer/witcher3stringeditor.mcp/$VERSION/readme"
+          for i in $(seq 1 40); do
+            curl -sf "$url" > /dev/null && { echo "package is live"; exit 0; }
+            sleep 15
+          done
+          echo "package still not available after 10 minutes"; exit 1
+
+      - name: Install mcp-publisher
+        run: |
+          curl -sL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" \
+            | tar xz mcp-publisher
+
+      - name: Publish to the MCP Registry
+        run: |
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher validate Witcher3StringEditor.MCP/.mcp/server.json
+          ./mcp-publisher publish  Witcher3StringEditor.MCP/.mcp/server.json
