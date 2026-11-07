@@ -165,7 +165,7 @@ skills\
   w3strings-mod\          mod paths, language slot, version, load order, testing
 ```
 
-See [`../skills/README.md`](../skills/README.md) for install and maintenance notes.
+See [`skills/README.md`](skills/README.md) for install and maintenance notes.
 
 ## Build from source
 

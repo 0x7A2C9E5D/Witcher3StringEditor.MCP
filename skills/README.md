@@ -37,7 +37,7 @@ search path. After copying, the skill list should show `w3strings-mcp`, `w3strin
 `w3strings-translate` and `w3strings-mod`.
 
 The skills assume the **server** is installed and connected, which is a separate step (via `dnx`,
-see the [main README](../Witcher3StringEditor.MCP/README.md#install)). A skill is documentation; it
+see the [main README](../README.md#install)). A skill is documentation; it
 cannot start the server for you.
 
 ## Version pins
