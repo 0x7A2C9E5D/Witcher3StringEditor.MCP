@@ -151,22 +151,6 @@ After restarting the client, the server should expose **15 tools** (`open_docume
 - Read the log — the client only shows a generic error, the real exception is always in
   `%LOCALAPPDATA%\Witcher3StringEditor.MCP\logs\log<date>.txt` (one file per day).
 
-## Skills for AI agents
-
-The repository ships agent skills that describe how to drive this server: connection and tool
-reference, editing and verification, translation, and shipping a mod. Copy the folders into your
-client's skills directory (`~/.dsh/skills`, `~/.claude/skills`, …):
-
-```
-skills\
-  w3strings-mcp\          install, connect, tool map, safety rules, error triage
-  w3strings-edit\         find, change, add, delete, save and verify
-  w3strings-translate\    translation workflow, markup, glossary, QA
-  w3strings-mod\          mod paths, language slot, version, load order, testing
-```
-
-See [`skills/README.md`](skills/README.md) for install and maintenance notes.
-
 ## Build from source
 
 ```powershell
@@ -188,7 +172,7 @@ all of them must be pushed to NuGet.org for `dnx` to resolve the right binary.
 - Diagnostics go to the user's local application data, never to stdout and never to the working
   directory: `%LOCALAPPDATA%\Witcher3StringEditor.MCP\logs\log<date>.txt` on Windows and
   `~/.local/share/Witcher3StringEditor.MCP/logs/log<date>.txt` on Unix-like systems. One file per day,
-  rotating at 10 MB, keeping the last three files.
+  with Serilog's default file retention of 31 files (1 GB per file).
 
 ## License
 
