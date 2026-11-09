@@ -176,4 +176,4 @@ all of them must be pushed to NuGet.org for `dnx` to resolve the right binary.
 
 ## License
 
-See the [repository](https://github.com/0x7A2C9E5D/Witcher3StringEditor.MCP).
+Released under the [MIT License](https://github.com/0x7A2C9E5D/Witcher3StringEditor.MCP/blob/master/LICENSE).

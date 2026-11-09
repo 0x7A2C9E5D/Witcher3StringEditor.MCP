@@ -36,6 +36,7 @@
         <PackageProjectUrl>https://github.com/0x7A2C9E5D/Witcher3StringEditor.MCP</PackageProjectUrl>
         <PackageVersion>0.1.0-beta.4</PackageVersion>
         <PackageTags>AI;MCP;server;stdio;w3strings;witcher3</PackageTags>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <Description>MCP server for reading and editing The Witcher 3 .w3strings localization files.</Description>
         <Platforms>AnyCPU;x64</Platforms>
     </PropertyGroup>
